@@ -1,0 +1,45 @@
+{
+    "configurations": [
+        {
+            "name": "Zfoc 1.1 Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/Firmware/ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+                "${workspaceFolder}/Firmware/Interface",
+                "${workspaceFolder}/Firmware/Board/v1/Inc",
+                "/usr/lib/arm-none-eabi/include",
+                "/usr/lib/arm-none-eabi/include/c++/9.2.1",
+                "/usr/lib/gcc/arm-none-eabi/9.2.1/",
+                "/usr/lib/gcc/arm-none-eabi/9.2.1/include",
+                "/usr/lib/gcc/arm-none-eabi/9.2.1/include-fixed"
+            ],
+            "compilerPath": "arm-none-eabi-g++",
+            "intelliSenseMode": "gcc-arm",
+            "defines": [
+                "__arm__",
+                "STM32G474xx",
+                "FPU_FPV4",
+                "USE_HAL_DRIVER",
+                "HW_VERSION_MAJOR=3",
+                "HW_VERSION_MINOR=6",
+                "HW_VERSION_VOLTAGE=56",
+                "__weak=\"__attribute__((weak))\"",
+                "__packed=\"__attribute__((__packed__))\"",
+                "__GNUC__"
+            ],
+            "compilerArgs": [
+                "-mthumb",
+                "-mcpu=cortex-m4",
+                "-mfpu=fpv4-sp-d16",
+                "-mfloat-abi=hard",
+                "-specs=nosys.specs",
+                "-specs=nano.specs",
+                "-u _printf_float",
+                "-u _scanf_float"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

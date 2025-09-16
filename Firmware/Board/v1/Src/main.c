@@ -22,6 +22,7 @@
 #include "adc.h"
 #include "cordic.h"
 #include "crc.h"
+#include "dma.h"
 #include "fdcan.h"
 #include "fmac.h"
 #include "hrtim.h"
@@ -96,6 +97,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CORDIC_Init();
   MX_CRC_Init();
   MX_FDCAN2_Init();
@@ -105,6 +107,7 @@ int main(void)
   MX_TIM8_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

@@ -53,6 +53,9 @@ zfoc_firmware_pkg = {
     root = '.',
     include_dirs = {
         '.',
+        'Drivers/STM32',
+        'Interface',
+        'MotorControl',
     },
     code_files = {}
 }
@@ -152,14 +155,15 @@ board_v1 = {
         'Src/sysmem.c',
         'Src/system_stm32g4xx.c',
         'Src/tim.c',
-        'Src/usart.c'
+        'Src/usart.c',
+        'Src/dma.c',
     },
     cflags = {
         '-DSTM32G474xx',
         '-DHW_VERSION_MAJOR=1',
     },
     ldflags = {
-        '-TBoard/v1/STM32G474CETx_FLASH.ld',
+        '-TBoard/v1/Corrected_STM32G474CETx_FLASH.ld',
     }
 }
 
