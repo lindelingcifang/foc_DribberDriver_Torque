@@ -47,14 +47,10 @@ struct BoardConfig_t {
         DEFAULT_GPIO_MODES
     };
 
-    bool enable_uart_a = true;
-    bool enable_uart_b = false;
-    bool enable_uart_c = false;
-    uint32_t uart_a_baudrate = 115200;
-    uint32_t uart_b_baudrate = 115200;
-    uint32_t uart_c_baudrate = 115200;
+    bool enable_uart = true;
+    uint32_t uart_baudrate = 115200;
     bool enable_can_a = true;
-    bool enable_i2c_a = false;
+    bool enable_can_b = true;
     float max_regen_current = 0.0f;
     float brake_resistance = DEFAULT_BRAKE_RESISTANCE;
     bool enable_brake_resistor = false;
@@ -120,10 +116,9 @@ inline ENUMTYPE operator ~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~static_c
 #include <controller.hpp>
 #include <current_limiter.hpp>
 #include <trapTraj.hpp>
-#include <endstop.hpp>
 #include <axis.hpp>
 #include <communication/communication.h>
-#include <communication/can/odrive_can.hpp>
+#include <communication/can/zfoc_can.hpp>
 
 // Defined in autogen/version.c based on git-derived version numbers
 extern "C" {
@@ -179,7 +174,8 @@ public:
 
     SystemStats_t system_stats_;
 
-    ODriveCAN can_;
+    ZfocCAN can_a;
+    ZfocCAN can_b;
 
     BoardConfig_t config_;
     uint32_t user_config_loaded_ = 0;
@@ -192,7 +188,6 @@ public:
     uint32_t n_evt_control_loop_ = 0;
     bool task_timers_armed_ = false;
     TaskTimes task_times_;
-    const bool otp_valid_ = ((uint8_t*)FLASH_OTP_BASE)[0] != 0xff;
 };
 
 extern Zfoc zfoc; // defined in main.cpp

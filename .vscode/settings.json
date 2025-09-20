@@ -50,6 +50,17 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "utils.hpp": "c"
+        "utils.hpp": "c",
+        "cmsis_os.h": "c",
+        "bitset": "cpp",
+        "cwctype": "cpp",
+        "numeric": "cpp",
+        "system_error": "cpp",
+        "fstream": "cpp",
+        "stm32g474xx.h": "c",
+        "stm32g4xx_hal.h": "c",
+        "stm32_nvm.h": "c",
+        "stm32g4xx_hal_flash_ex.h": "c",
+        "stm32g4xx_hal_def.h": "c"
     }
 }

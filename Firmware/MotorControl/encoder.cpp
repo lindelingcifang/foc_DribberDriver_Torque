@@ -3,10 +3,10 @@
 #include <Drivers/STM32/stm32_system.h>
 #include <bitset>
 
-Encoder::Encoder(TIM_HandleTypeDef* timer, Stm32Gpio index_gpio,
+Encoder::Encoder(TIM_HandleTypeDef* timer,
                  Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio,
                 Stm32Uart* uart) :
-        timer_(timer), index_gpio_(index_gpio),
+        timer_(timer),
         hallA_gpio_(hallA_gpio), hallB_gpio_(hallB_gpio), hallC_gpio_(hallC_gpio),
         uart_(uart)
 {

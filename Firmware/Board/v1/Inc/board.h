@@ -24,8 +24,6 @@
 
 #define GPIO_COUNT (10)
 
-#define CAN_FREQ (1000000UL)
-
 #define DEFAULT_BRAKE_RESISTANCE (10.0f) // [Ohm] physical resistor on the board
 
 #define DEFAULT_MIN_DC_VOLTAGE 8.0f
@@ -35,10 +33,10 @@
     ZfocIntf::GPIO_MODE_UART,             /* GPIO1  */ \
     ZfocIntf::GPIO_MODE_UART,             /* GPIO2  */ \
     ZfocIntf::GPIO_MODE_ENC,              /* GPIO3  */ \
-    ZfocIntf::GPIO_MODE_CAN,              /* GPIO4  */ \
-    ZfocIntf::GPIO_MODE_CAN,              /* GPIO5  */ \
-    ZfocIntf::GPIO_MODE_CAN,              /* GPIO6  */ \
-    ZfocIntf::GPIO_MODE_CAN,              /* GPIO7  */ \
+    ZfocIntf::GPIO_MODE_CAN_B,              /* GPIO4  */ \
+    ZfocIntf::GPIO_MODE_CAN_B,              /* GPIO5  */ \
+    ZfocIntf::GPIO_MODE_CAN_A,              /* GPIO6  */ \
+    ZfocIntf::GPIO_MODE_CAN_A,              /* GPIO7  */ \
     ZfocIntf::GPIO_MODE_ENC,              /* GPIO8  */ \
     ZfocIntf::GPIO_MODE_DIGITAL,          /* GPIO9  */ 
 
@@ -94,5 +92,5 @@ void system_init();
 bool board_init();
 void start_timers();
 
-#endif // __BOARD_CONFIG_H
+#endif // __BOARD_H
 

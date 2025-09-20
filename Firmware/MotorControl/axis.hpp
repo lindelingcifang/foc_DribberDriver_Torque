@@ -7,7 +7,6 @@ class Axis;
 #include "controller.hpp"
 #include "open_loop_controller.hpp"
 #include "trapTraj.hpp"
-#include "endstop.hpp"
 #include "low_level.h"
 #include "utils.hpp"
 #include "task_timer.hpp"
@@ -117,15 +116,11 @@ public:
     };
 
     Axis(int axis_num,
-            uint16_t default_step_gpio_pin,
-            uint16_t default_dir_gpio_pin,
-            osPriority thread_priority,
-            Encoder& encoder,
-            Controller& controller,
-            Motor& motor,
-            TrapezoidalTrajectory& trap,
-            Endstop& min_endstop,
-            Endstop& max_endstop);
+        osPriority thread_priority,
+        Encoder& encoder,
+        Controller& controller,
+        Motor& motor,
+        TrapezoidalTrajectory& trap);
 
     bool apply_config();
     void clear_config();
@@ -173,8 +168,6 @@ public:
     OpenLoopController open_loop_controller_;
     Motor& motor_;
     TrapezoidalTrajectory& trap_traj_;
-    Endstop& min_endstop_;
-    Endstop& max_endstop_;
     TaskTimes task_times_;
 
     osThreadId thread_id_ = 0;

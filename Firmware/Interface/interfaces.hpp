@@ -179,10 +179,11 @@ public:
         GPIO_MODE_DIGITAL_PULL_DOWN      = 2,
         GPIO_MODE_ANALOG_IN              = 3,
         GPIO_MODE_UART                   = 4,
-        GPIO_MODE_CAN                    = 5,
-        GPIO_MODE_PWM                    = 6,
-        GPIO_MODE_ENC                    = 7,
-        GPIO_MODE_STATUS                 = 8,
+        GPIO_MODE_CAN_A                  = 5,
+        GPIO_MODE_CAN_B                  = 6,
+        GPIO_MODE_PWM                    = 7,
+        GPIO_MODE_ENC                    = 8,
+        GPIO_MODE_STATUS                 = 9,
     };
     enum StreamProtocolType {
         STREAM_PROTOCOL_TYPE_FIBRE       = 0,

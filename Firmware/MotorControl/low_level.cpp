@@ -106,10 +106,12 @@ void start_adc_pwm() {
     start_timers();
 }
 
-// @brief ADC1 measurements are written to this buffer by DMA
+// @brief [DEPRICATED] ADC1 measurements are written to this buffer by DMA
 uint16_t adc_measurements_[ADC_CHANNEL_COUNT] = { 0 };
 
-// @brief Starts the general purpose ADC on the ADC1 peripheral.
+// TODO: ZFOC v1.1 doesn't have general purpose (ADC1 is for current measurement)
+//
+// @brief [DEPRICATED] Starts the general purpose ADC on the ADC1 peripheral.
 // The measured ADC voltages can be read with get_adc_voltage().
 //
 // ADC1 is set up to continuously sample all channels 0 to 15 in a
@@ -125,7 +127,7 @@ void start_general_purpose_adc() {
     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
     hadc1.Init.GainCompensation = 0;
     hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+    hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
     hadc1.Init.LowPowerAutoWait = DISABLE;
     hadc1.Init.ContinuousConvMode = DISABLE;
     hadc1.Init.NbrOfConversion = ADC_CHANNEL_COUNT;

@@ -127,7 +127,6 @@ bool Controller::control_mode_updated() {
     return true;
 }
 
-
 void Controller::update_filter_gains() {
     float bandwidth = std::min(config_.input_filter_bandwidth, 0.25f * current_meas_hz);
     input_filter_ki_ = 2.0f * bandwidth;  // basic conversion to discrete time
