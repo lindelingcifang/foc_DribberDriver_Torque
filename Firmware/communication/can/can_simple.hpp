@@ -8,11 +8,10 @@ class CANSimple {
    public:
     enum {
         MSG_CO_NMT_CTRL = 0x000,  // CANOpen NMT Message REC
-        MSG_ODRIVE_HEARTBEAT,
-        MSG_ODRIVE_ESTOP,
+        MSG_ZFOC_HEARTBEAT,
+        MSG_ZFOC_ESTOP,
         MSG_GET_MOTOR_ERROR,  // Errors
         MSG_GET_ENCODER_ERROR,
-        MSG_GET_SENSORLESS_ERROR,
         MSG_SET_AXIS_NODE_ID,
         MSG_SET_AXIS_REQUESTED_STATE,
         MSG_SET_AXIS_STARTUP_CONFIG,
@@ -28,8 +27,7 @@ class CANSimple {
         MSG_SET_TRAJ_ACCEL_LIMITS,
         MSG_SET_TRAJ_INERTIA,
         MSG_GET_IQ,
-        MSG_GET_SENSORLESS_ESTIMATES,
-        MSG_RESET_ODRIVE,
+        MSG_RESET_ZFOC,
         MSG_GET_BUS_VOLTAGE_CURRENT,
         MSG_CLEAR_ERRORS,
         MSG_SET_LINEAR_COUNT,
@@ -58,11 +56,9 @@ class CANSimple {
     bool get_motor_error_callback(const Axis& axis);
     bool get_encoder_error_callback(const Axis& axis);
     bool get_controller_error_callback(const Axis& axis);
-    bool get_sensorless_error_callback(const Axis& axis);
     bool get_encoder_estimates_callback(const Axis& axis);
     bool get_encoder_count_callback(const Axis& axis);
     bool get_iq_callback(const Axis& axis);
-    bool get_sensorless_estimates_callback(const Axis& axis);
     bool get_bus_voltage_current_callback(const Axis& axis);
     // msg.rtr bit must NOT be set
     bool get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg);

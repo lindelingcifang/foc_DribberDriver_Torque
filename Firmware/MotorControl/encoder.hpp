@@ -45,8 +45,6 @@ public:
 
         // custom setters
         Encoder* parent = nullptr;
-        void set_use_index(bool value) { use_index = value; parent->set_idx_subscribe(); }
-        void set_find_idx_on_lockin_only(bool value) { find_idx_on_lockin_only = value; parent->set_idx_subscribe(); }
         void set_pre_calibrated(bool value) { pre_calibrated = value; parent->check_pre_calibrated(); }
         void set_bandwidth(float value) { bandwidth = value; parent->update_pll_gains(); }
     };
@@ -61,7 +59,6 @@ public:
     bool do_checks();
 
     void enc_index_cb();
-    void set_idx_subscribe(bool override_enable = false);
     void update_pll_gains();
     void check_pre_calibrated();
 

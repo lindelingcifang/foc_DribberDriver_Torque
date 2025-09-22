@@ -143,7 +143,7 @@ void ZfocCAN::process_rx_fifo(uint32_t fifo) {
         // Find the triggered subscription item based on header.FilterMatchIndex
         auto it = std::find_if(subscriptions_.begin(), subscriptions_.end(), [&](auto& s) {
             size_t current_idx = (s.fifo == 0 ? fifo0_idx : fifo1_idx)++;
-            return (header.FilterMatchIndex == current_idx) && (s.fifo == fifo);
+            return (header.FilterIndex == current_idx) && (s.fifo == fifo);
         });
 
         if (it == subscriptions_.end()) {

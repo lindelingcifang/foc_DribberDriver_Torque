@@ -8,6 +8,7 @@
 #include "interface_can.hpp"
 
 osSemaphoreId sem_can;
+const uint32_t stack_size_default_task = 128;
 
 #if defined(STM32G474xx)
 // Place FreeRTOS heap in core coupled memory for better performance
@@ -461,16 +462,16 @@ extern "C" int main(void) {
             mode == ZfocIntf::GPIO_MODE_STATUS ||
             mode == ZfocIntf::GPIO_MODE_ANALOG_IN) {
             GPIO_InitStruct.Alternate = 0;
-        } else {
-            auto it = std::find_if(
-                    alternate_functions[i].begin(), alternate_functions[i].end(),
-                    [mode](auto a) { return a.mode == mode; });
+        // } else {
+        //     auto it = std::find_if(
+        //             alternate_functions[i].begin(), alternate_functions[i].end(),
+        //             [mode](auto a) { return a.mode == mode; });
 
-            if (it == alternate_functions[i].end()) {
-                zfoc.misconfigured_ = true; // this GPIO doesn't support the selected mode
-                continue;
-            }
-            GPIO_InitStruct.Alternate = it->alternate_function;
+        //     if (it == alternate_functions[i].end()) {
+        //         zfoc.misconfigured_ = true; // this GPIO doesn't support the selected mode
+        //         continue;
+        //     }
+        //     GPIO_InitStruct.Alternate = it->alternate_function;
         }
 
         switch (mode) {

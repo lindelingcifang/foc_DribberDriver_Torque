@@ -94,8 +94,6 @@ public:
 
         // custom setters
         Axis* parent = nullptr;
-        void set_step_gpio_pin(uint16_t value) { step_gpio_pin = value; parent->decode_step_dir_pins(); }
-        void set_dir_gpio_pin(uint16_t value) { dir_gpio_pin = value; parent->decode_step_dir_pins(); }
     };
 
     struct Homing_t {
@@ -127,10 +125,6 @@ public:
 
     void start_thread();
     bool wait_for_control_iteration();
-
-    void step_cb();
-    void set_step_dir_active(bool enable);
-    void decode_step_dir_pins();
 
     bool do_checks(uint32_t timestamp);
 

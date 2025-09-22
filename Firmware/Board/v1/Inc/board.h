@@ -73,7 +73,7 @@ static const float current_meas_period = CURRENT_MEAS_PERIOD;
 
 // Frequency in [Hz]
 #define CURRENT_MEAS_HZ ( (float)(HRTIM_APB2_CLOCK_HZ) / (float)(2*HRTIM_PERIOD_CLOCKS*(HRTIM_REP+1)) )
-static const int current_meas_hz = CURRENT_MEAS_HZ;
+static const int current_meas_hz = (int)CURRENT_MEAS_HZ;
 
 #define VBUS_S_DIVIDER_RATIO 11.0f
 

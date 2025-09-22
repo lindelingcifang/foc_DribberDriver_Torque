@@ -44,3 +44,4 @@ void cordic_cos_sin(float angle, float* cos, float* sin) {
     
     *cos = static_cast<float>((int32_t)CORDIC->RDATA) * INV_MOD;
     *sin = static_cast<float>((int32_t)CORDIC->RDATA) * INV_MOD;
+}

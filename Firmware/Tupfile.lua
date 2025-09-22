@@ -56,8 +56,30 @@ zfoc_firmware_pkg = {
         'Drivers/STM32',
         'Interface',
         'MotorControl',
+        'communication',
+        'communication/can',
     },
-    code_files = {}
+    code_files = {
+        'MotorControl/axis.cpp',
+        'MotorControl/controller.cpp',
+        'MotorControl/encoder.cpp',
+        'MotorControl/foc.cpp',
+        'MotorControl/low_level.cpp',
+        'MotorControl/main.cpp',
+        'MotorControl/motor.cpp',
+        'MotorControl/open_loop_controller.cpp',
+        'MotorControl/trapTraj.cpp',
+        'MotorControl/utils.cpp',
+        'Drivers/STM32/stm32_system.cpp',
+        'Drivers/STM32/stm32_gpio.cpp',
+        'Drivers/STM32/stm32_nvm.c',
+        'Drivers/STM32/stm32_uart.cpp',
+        'Drivers/STM32/cordic_cos_sin.cpp',
+        'communication/communication.cpp',
+        'communication/can/can_simple.cpp',
+        'communication/can/zfoc_can.cpp',
+        'Board/version.c',
+    }
 }
 
 stm32g4xx_hal_pkg = {
@@ -139,6 +161,7 @@ board_v1 = {
     code_files = {
         'startup_stm32g474xx.s',
         '../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c',
+        'board.cpp',
         'Src/adc.c',
         'Src/app_freertos.c',
         'Src/cordic.c',

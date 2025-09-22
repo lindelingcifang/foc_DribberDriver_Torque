@@ -1,7 +1,7 @@
 
 #include "can_simple.hpp"
 
-#include <odrive_main.h>
+#include <zfoc_main.h>
 #include <functional>
 
 bool CANSimple::init() {
@@ -63,10 +63,10 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
             break;
         case MSG_CO_HEARTBEAT_CMD:
             break;
-        case MSG_ODRIVE_HEARTBEAT:
+        case MSG_ZFOC_HEARTBEAT:
             // We don't currently do anything to respond to ODrive heartbeat messages
             break;
-        case MSG_ODRIVE_ESTOP:
+        case MSG_ZFOC_ESTOP:
             estop_callback(axis, msg);
             break;
         case MSG_GET_MOTOR_ERROR:
@@ -76,10 +76,6 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
         case MSG_GET_ENCODER_ERROR:
             if (msg.rtr || msg.len == 0)
                 get_encoder_error_callback(axis);
-            break;
-        case MSG_GET_SENSORLESS_ERROR:
-            if (msg.rtr || msg.len == 0)
-                get_sensorless_error_callback(axis);
             break;
         case MSG_SET_AXIS_NODE_ID:
             set_axis_nodeid_callback(axis, msg);
@@ -129,11 +125,7 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
             if (msg.rtr || msg.len == 0)
                 get_iq_callback(axis);
             break;
-        case MSG_GET_SENSORLESS_ESTIMATES:
-            if (msg.rtr || msg.len == 0)
-                get_sensorless_estimates_callback(axis);
-            break;
-        case MSG_RESET_ODRIVE:
+        case MSG_RESET_ZFOC:
             NVIC_SystemReset();
             break;
         case MSG_GET_BUS_VOLTAGE_CURRENT:
@@ -195,18 +187,6 @@ bool CANSimple::get_encoder_error_callback(const Axis& axis) {
     return canbus_->send_message(txmsg);
 }
 
-bool CANSimple::get_sensorless_error_callback(const Axis& axis) {
-    can_Message_t txmsg;
-    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_GET_SENSORLESS_ERROR;  // heartbeat ID
-    txmsg.isExt = axis.config_.can.is_extended;
-    txmsg.len = 8;
-
-    can_setSignal(txmsg, axis.sensorless_estimator_.error_, 0, 32, true);
-
-    return canbus_->send_message(txmsg);
-}
-
 bool CANSimple::get_controller_error_callback(const Axis& axis) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
@@ -240,21 +220,6 @@ bool CANSimple::get_encoder_estimates_callback(const Axis& axis) {
 
     can_setSignal<float>(txmsg, axis.controller_.pos_estimate_linear_src_.any().value_or(0.0f), 0, 32, true);
     can_setSignal<float>(txmsg, axis.controller_.vel_estimate_src_.any().value_or(0.0f), 32, 32, true);
-
-    return canbus_->send_message(txmsg);
-}
-
-bool CANSimple::get_sensorless_estimates_callback(const Axis& axis) {
-    can_Message_t txmsg;
-    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_GET_SENSORLESS_ESTIMATES;  // heartbeat ID
-    txmsg.isExt = axis.config_.can.is_extended;
-    txmsg.len = 8;
-
-    static_assert(sizeof(float) == sizeof(axis.sensorless_estimator_.pll_pos_));
-
-    can_setSignal<float>(txmsg, axis.sensorless_estimator_.pll_pos_, 0, 32, true);
-    can_setSignal<float>(txmsg, axis.sensorless_estimator_.vel_estimate_.any().value_or(0.0f), 32, 32, true);
 
     return canbus_->send_message(txmsg);
 }
@@ -384,7 +349,7 @@ bool CANSimple::get_adc_voltage_callback(const Axis& axis, const can_Message_t& 
 }
 
 void CANSimple::clear_errors_callback(Axis& axis, const can_Message_t& msg) {
-    odrv.clear_errors();  // TODO: might want to clear axis errors only
+    zfoc.clear_errors();  // TODO: might want to clear axis errors only
 }
 
 uint32_t CANSimple::service_stack() {
@@ -406,16 +371,14 @@ uint32_t CANSimple::service_stack() {
     };
 
     for (auto& axis : axes) {
-        std::array<periodic, 10> periodics = {{
+        std::array<periodic, 8> periodics = {{
             {axis.config_.can.heartbeat_rate_ms, axis.can_.last_heartbeat, &CANSimple::send_heartbeat},
             {axis.config_.can.encoder_rate_ms, axis.can_.last_encoder, &CANSimple::get_encoder_estimates_callback},
             {axis.config_.can.motor_error_rate_ms, axis.can_.last_motor_error, &CANSimple::get_motor_error_callback},
             {axis.config_.can.encoder_error_rate_ms, axis.can_.last_encoder_error, &CANSimple::get_encoder_error_callback},
             {axis.config_.can.controller_error_rate_ms, axis.can_.last_controller_error, &CANSimple::get_controller_error_callback},
-            {axis.config_.can.sensorless_error_rate_ms, axis.can_.last_sensorless_error, &CANSimple::get_sensorless_error_callback},
             {axis.config_.can.encoder_count_rate_ms, axis.can_.last_encoder_count, &CANSimple::get_encoder_count_callback},
             {axis.config_.can.iq_rate_ms, axis.can_.last_iq, &CANSimple::get_iq_callback},
-            {axis.config_.can.sensorless_rate_ms, axis.can_.last_sensorless, &CANSimple::get_sensorless_estimates_callback},
             {axis.config_.can.bus_vi_rate_ms, axis.can_.last_bus_vi, &CANSimple::get_bus_voltage_current_callback},
         }};
 
@@ -441,7 +404,7 @@ uint32_t CANSimple::service_stack() {
 bool CANSimple::send_heartbeat(const Axis& axis) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_ODRIVE_HEARTBEAT;  // heartbeat ID
+    txmsg.id += MSG_ZFOC_HEARTBEAT;  // heartbeat ID
     txmsg.isExt = axis.config_.can.is_extended;
     txmsg.len = 8;
 

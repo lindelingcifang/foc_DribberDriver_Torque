@@ -28,14 +28,9 @@ extern const uint32_t stack_size_analog_thread;
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
-void safety_critical_arm_brake_resistor();
-void safety_critical_disarm_brake_resistor();
-void safety_critical_apply_brake_resistor_timings(uint32_t low_off, uint32_t high_on);
-
 // called from STM platform code
 extern "C" {
 void vbus_sense_adc_cb(uint32_t adc_value);
-void pwm_in_cb(TIM_HandleTypeDef *htim);
 }
 
 // Initalisation

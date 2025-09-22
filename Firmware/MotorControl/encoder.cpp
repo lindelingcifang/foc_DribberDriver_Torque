@@ -27,7 +27,6 @@ bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
 
 void Encoder::setup() {
     HAL_TIM_Encoder_Start(timer_, TIM_CHANNEL_ALL);
-    set_idx_subscribe();
 
     mode_ = config_.mode;
 
@@ -115,7 +114,7 @@ void Encoder::set_circular_count(int32_t count, bool update_offset) {
 bool Encoder::run_index_search() {
     config_.use_index = true;
     index_found_ = false;
-    set_idx_subscribe();
+    // set_idx_subscribe();
 
     bool success = axis_->run_lockin_spin(axis_->config_.calibration_lockin, false);
     return success;
