@@ -191,16 +191,12 @@ public:
         STREAM_PROTOCOL_TYPE_STDOUT      = 2,
         STREAM_PROTOCOL_TYPE_ASCII_AND_STDOUT = 3,
     };
-    virtual int32_t test_function(int32_t delta) = 0;
     virtual float get_adc_voltage(uint32_t gpio) = 0;
     virtual bool save_configuration() = 0;
     virtual void erase_configuration() = 0;
     virtual void reboot() = 0;
-    virtual void enter_dfu_mode() = 0;
     virtual uint32_t get_interrupt_status(int32_t irqn) = 0;
-    virtual uint32_t get_dma_status(uint8_t stream_num) = 0;
     virtual uint32_t get_gpio_states() = 0;
-    virtual uint64_t get_drv_fault() = 0;
     virtual void clear_errors() = 0;
 };
 

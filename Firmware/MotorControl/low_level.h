@@ -45,8 +45,6 @@ void sync_timers(TIM_HandleTypeDef* htim_a, TIM_HandleTypeDef* htim_b,
                  uint16_t TIM_CLOCKSOURCE_ITRx, uint16_t count_offset,
                  TIM_HandleTypeDef* htim_refbase = nullptr);
 void start_general_purpose_adc();
-void pwm_in_init();
-void start_analog_thread();
 
 // ADC getters
 uint16_t channel_from_gpio(Stm32Gpio gpio);

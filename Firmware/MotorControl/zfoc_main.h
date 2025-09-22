@@ -27,17 +27,19 @@ typedef struct {
     uint32_t min_heap_space; // FreeRTOS heap [Bytes]
     uint32_t max_stack_usage_axis; // minimum remaining space since startup [Bytes]
     uint32_t max_stack_usage_startup;
-    uint32_t max_stack_usage_can;
-    uint32_t max_stack_usage_uart;
+    uint32_t max_stack_usage_can_a;
+    uint32_t max_stack_usage_can_b;
 
     uint32_t stack_size_axis;
     uint32_t stack_size_startup;
-    uint32_t stack_size_can;
+    uint32_t stack_size_can_a;
+    uint32_t stack_size_can_b;
     uint32_t stack_size_uart;
 
     int32_t prio_axis;
     int32_t prio_startup;
-    int32_t prio_can;
+    int32_t prio_can_a;
+    int32_t prio_can_b;
     int32_t prio_uart;
 } SystemStats_t;
 
@@ -135,6 +137,15 @@ static Stm32Gpio get_gpio(size_t gpio_num) {
 // general system functions defined in main.cpp
 class Zfoc : public ZfocIntf {
 public:
+    bool save_configuration();
+    void erase_configuration();
+    void reboot() { NVIC_SystemReset(); }
+    void clear_errors();
+
+    float get_adc_voltage(uint32_t gpio) override {
+        return ::get_adc_voltage(get_gpio(gpio));
+    }
+
     bool any_error();
 
     void do_fast_checks();
@@ -144,9 +155,7 @@ public:
     Axis& get_axis(int num) { return axes[num]; }
 
     uint32_t get_interrupt_status(int32_t irqn);
-    uint32_t get_dma_status(uint8_t stream_num);
     uint32_t get_gpio_states();
-    uint64_t get_drv_fault();
     void disarm_with_error(Error error);
 
     Error error_ = ERROR_NONE;

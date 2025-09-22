@@ -160,7 +160,7 @@ static bool fetch_and_reset_adcs(std::optional<Iph_ABC_t>* current0) {
         return false;
     }
 
-    // TODO: Get vbus from CAN_B
+    // FIXME: Get vbus from CAN_B
 
     std::optional<float> phA = motors[0].phase_current_from_adcval(adc_vals[1]);
     std::optional<float> phB = motors[0].phase_current_from_adcval(adc_vals[2]);
