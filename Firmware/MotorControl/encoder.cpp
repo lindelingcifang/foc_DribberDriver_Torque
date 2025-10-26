@@ -72,8 +72,6 @@ void Encoder::check_pre_calibrated() {
     if (axis_->motor_.config_.motor_type != Motor::MOTOR_TYPE_ACIM) {
         if (!is_ready_)
             config_.pre_calibrated = false;
-        if (mode_ == MODE_INCREMENTAL && !index_found_)
-            config_.pre_calibrated = false;
     }
 }
 
@@ -111,22 +109,12 @@ void Encoder::set_circular_count(int32_t count, bool update_offset) {
     cpu_exit_critical(prim);
 }
 
-bool Encoder::run_index_search() {
-    config_.use_index = true;
-    index_found_ = false;
-    // set_idx_subscribe();
-
-    bool success = axis_->run_lockin_spin(axis_->config_.calibration_lockin, false);
-    return success;
-}
-
 bool Encoder::run_direction_find() {
     int32_t init_enc_val = shadow_count_;
 
     Axis::LockinConfig_t lockin_config = axis_->config_.calibration_lockin;
     lockin_config.finish_distance = lockin_config.vel * 3.0f; // run for 3 seconds
     lockin_config.finish_on_distance = true;
-    lockin_config.finish_on_enc_idx = false;
     lockin_config.finish_on_vel = false;
     bool success = axis_->run_lockin_spin(lockin_config, false);
 
@@ -151,7 +139,6 @@ bool Encoder::run_hall_polarity_calibration() {
     Axis::LockinConfig_t lockin_config = axis_->config_.calibration_lockin;
     lockin_config.finish_distance = lockin_config.vel * 3.0f; // run for 3 seconds
     lockin_config.finish_on_distance = true;
-    lockin_config.finish_on_enc_idx = false;
     lockin_config.finish_on_vel = false;
 
     auto loop_cb = [this](bool const_vel) {
@@ -212,7 +199,6 @@ bool Encoder::run_hall_phase_calibration() {
     Axis::LockinConfig_t lockin_config = axis_->config_.calibration_lockin;
     lockin_config.finish_distance = lockin_config.vel * 30.0f; // run for 30 seconds
     lockin_config.finish_on_distance = true;
-    lockin_config.finish_on_enc_idx = false;
     lockin_config.finish_on_vel = false;
 
     auto loop_cb = [this](bool const_vel) {
@@ -267,12 +253,6 @@ bool Encoder::run_hall_phase_calibration() {
 // and the encoder state 0.
 bool Encoder::run_offset_calibration() {
     const float start_lock_duration = 1.0f;
-
-    // Require index found if enabled
-    if (config_.use_index && !index_found_) {
-        set_error(ERROR_INDEX_NOT_FOUND_YET);
-        return false;
-    }
 
     if (config_.mode == MODE_HALL && !config_.hall_polarity_calibrated) {
         set_error(ERROR_HALL_NOT_CALIBRATED_YET);
@@ -414,10 +394,6 @@ static bool decode_hall(uint8_t hall_state, int32_t* hall_cnt) {
 
 void Encoder::sample_now() {
     switch (mode_) {
-        case MODE_INCREMENTAL: {
-            tim_cnt_sample_ = (int16_t)timer_->Instance->CNT;
-        } break;
-
         case MODE_HALL: {
             // do nothing: samples already captured in general GPIO capture
         } break;
@@ -540,13 +516,6 @@ bool Encoder::update() {
     int32_t pos_abs_latched = pos_abs_; //LATCH
 
     switch (mode_) {
-        case MODE_INCREMENTAL: {
-            //TODO: use count_in_cpr_ instead as shadow_count_ can overflow
-            //or use 64 bit
-            int16_t delta_enc_16 = (int16_t)tim_cnt_sample_ - (int16_t)shadow_count_;
-            delta_enc = (int32_t)delta_enc_16; //sign extend
-        } break;
-
         case MODE_HALL: {
             decode_hall_samples();
             if (sample_hall_states_) {

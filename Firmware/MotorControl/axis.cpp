@@ -36,21 +36,6 @@ Axis::LockinConfig_t Axis::default_calibration() {
     config.finish_distance = 100.0f * 2.0f * M_PI;  // [rad]
     config.finish_on_vel = false;
     config.finish_on_distance = true;
-    config.finish_on_enc_idx = true;
-    return config;
-}
-
-Axis::LockinConfig_t Axis::default_sensorless() {
-    Axis::LockinConfig_t config;
-    config.current = 10.0f;           // [A]
-    config.ramp_time = 0.4f;          // [s]
-    config.ramp_distance = 1 * M_PI;  // [rad]
-    config.accel = 200.0f;     // [rad/s^2]
-    config.vel = 400.0f; // [rad/s]
-    config.finish_distance = 100.0f;  // [rad]
-    config.finish_on_vel = true;
-    config.finish_on_distance = false;
-    config.finish_on_enc_idx = false;
     return config;
 }
 
@@ -187,7 +172,6 @@ bool Axis::run_lockin_spin(const LockinConfig_t &lockin_config, bool remain_arme
 
     motor_.arm(&motor_.current_control_);
 
-    bool subscribed_to_idx_once = false;
     bool success = false;
     float dir = lockin_config.vel >= 0.0f ? 1.0f : -1.0f;
 
@@ -197,8 +181,7 @@ bool Axis::run_lockin_spin(const LockinConfig_t &lockin_config, bool remain_arme
 
         // Check if terminal condition is reached
         bool terminal_condition = (reached_target_vel && lockin_config.finish_on_vel)
-                               || (reached_target_dist && lockin_config.finish_on_distance)
-                               || (encoder_.index_found_ && lockin_config.finish_on_enc_idx);
+                               || (reached_target_dist && lockin_config.finish_on_distance);
         if (terminal_condition) {
             success = true;
             break;
@@ -425,7 +408,7 @@ void Axis::run_state_machine_loop() {
             error_ &= ~ERROR_INVALID_STATE;
         }
 
-        // Note that current_state is a reference to task_chain_[0]
+        // Note that current_state is a reference to task_chain_[0] (see axis.hpp)
 
         // Run the specified state
         // Handlers should exit if requested_state != AXIS_STATE_UNDEFINED

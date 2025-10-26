@@ -31,7 +31,7 @@ const uint32_t stack_size_analog_thread = 1024;  // Bytes
 
 // This value is updated by the DC-bus reading ADC.
 // Arbitrary non-zero inital value to avoid division by zero if ADC reading is late
-float vbus_voltage = 12.0f;
+float vbus_voltage = 24.0f;
 float ibus_ = 0.0f; // exposed for monitoring only
 bool brake_resistor_armed = false;
 bool brake_resistor_saturated = false;

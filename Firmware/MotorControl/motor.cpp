@@ -281,6 +281,7 @@ bool Motor::disarm(bool* p_was_armed) {
 // @brief Tune the current controller based on phase resistance and inductance
 // This should be invoked whenever one of these values changes.
 // TODO: allow update on user-request or update automatically via hooks
+// K_p and K_i are tuned to cancel the poles of the plant and achieve the desired bandwidth
 void Motor::update_current_controller_gains() {
     // Calculate current control gains
     float p_gain = config_.current_control_bandwidth * config_.phase_inductance;
@@ -304,7 +305,7 @@ bool Motor::setup() {
     float max_unity_gain_current = kMargin * max_output_swing * shunt_conductance_; // [A]
     float requested_gain = max_unity_gain_current / config_.requested_current_range; // [V/V]
     
-    float actual_gain;
+    float actual_gain = 1.0f;
 
     // Values for current controller
     phase_current_rev_gain_ = 1.0f / actual_gain;
@@ -367,7 +368,7 @@ std::optional<float> Motor::phase_current_from_adcval(uint32_t ADCValue) {
 // Measurement and calibration
 //--------------------------------
 
-// TODO check Ibeta balance to verify good motor connection
+// TODO: check Ibeta balance to verify good motor connection
 bool Motor::measure_phase_resistance(float test_current, float max_voltage) {
     ResistanceMeasurementControlLaw control_law;
     control_law.target_current_ = test_current;
@@ -465,6 +466,8 @@ bool Motor::run_calibration() {
     return true;
 }
 
+// @brief Update Vdq setpoint based on torque setpoint
+// This is called at the control loop frequency.
 void Motor::update(uint32_t timestamp) {
     // Load torque setpoint, convert to motor direction
     std::optional<float> maybe_torque = torque_setpoint_src_.present();
@@ -585,6 +588,7 @@ void Motor::current_meas_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current
     }
 
     if (control_law_) {
+        // Pass measurements to control law
         Error err = control_law_->on_measurement(vbus_voltage,
                             current_meas_.has_value() ?
                                 std::make_optional(std::array<float, 3>{current_meas_->phA, current_meas_->phB, current_meas_->phC})

@@ -26,17 +26,13 @@ public:
         int32_t phase_offset = 0;        // Offset between encoder count and rotor electrical phase
         float phase_offset_float = 0.0f; // Sub-count phase alignment offset
         int32_t cpr = (2048 * 4);   // Default resolution of CUI-AMT102 encoder,
-        float index_offset = 0.0f;
-        bool use_index = false;
         bool pre_calibrated = false; // If true, this means the offset stored in
                                     // configuration is valid and does not need
                                     // be determined by run_offset_calibration.
                                     // In this case the encoder will enter ready
                                     // state as soon as the index is found.
         int32_t direction = 0; // direction with respect to motor
-        bool use_index_offset = true;
         bool enable_phase_interpolation = true; // Use velocity to interpolate inside the count state
-        bool find_idx_on_lockin_only = false; // Only be sensitive during lockin scan constant vel state
         bool ignore_illegal_hall_state = false; // dont error on bad states like 000 or 111
         uint8_t hall_polarity = 0;
         bool hall_polarity_calibrated = false;
@@ -88,7 +84,6 @@ public:
     Config_t config_;
 
     Error error_ = ERROR_NONE;
-    bool index_found_ = false;
     bool is_ready_ = false;
     int32_t shadow_count_ = 0;
     int32_t count_in_cpr_ = 0;
@@ -130,7 +125,7 @@ public:
     bool abs_uart_start_transaction();
     void abs_uart_cb(bool success);
     bool abs_uart_pos_updated_ = false;
-    Mode mode_ = MODE_INCREMENTAL;
+    Mode mode_ = MODE_HALL;
     Stm32Gpio abs_uart_cs_gpio_;
     uint32_t abs_uart_cr1;
     uint32_t abs_uart_cr2;

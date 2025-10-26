@@ -112,6 +112,9 @@ bool board_init() {
     HAL_NVIC_SetPriority(ControlLoop_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(ControlLoop_IRQn);
 
+    HAL_NVIC_SetPriority(HRTIM1_TIMA_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(HRTIM1_TIMA_IRQn);
+
     if (zfoc.config_.enable_can_a) {
         // The CAN initialization will (and must) init its own GPIOs before the
         // GPIO modes are initialized. Therefore we ensure that the later GPIO
@@ -150,8 +153,8 @@ void start_timers() {
         __HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_EOC);
         __HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_OVR);
 
-        __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERID_TIMER_D, HRTIM_TIM_IT_UPD);
-        __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERID_TIMER_D, HRTIM_TIM_IT_UPD);
+        __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_REP);
+        __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_REP);
     }
 }
 
@@ -166,7 +169,11 @@ static bool fetch_and_reset_adcs(std::optional<Iph_ABC_t>* current0) {
     std::optional<float> phA = motors[0].phase_current_from_adcval(adc_vals[1]);
     std::optional<float> phB = motors[0].phase_current_from_adcval(adc_vals[2]);
     std::optional<float> phC = motors[0].phase_current_from_adcval(adc_vals[3]);
+    if (phA.has_value() && phB.has_value() && phC.has_value()) {
+        *current0 = {*phA, *phB, *phC};
+    }
 
+    // Clear ADC flags
     ADC1->ISR = ~(ADC_ISR_EOC | ADC_ISR_OVR);
 
     return true;
@@ -188,11 +195,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 volatile uint32_t timestamp_ = 0;
 volatile bool counting_down_ = false;
 
-void HAL_HRTIM_RegistersUpdateCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t TimerIdx) {
+void HAL_HRTIM_RepetitionEventCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t TimerIdx) {
     if (TimerIdx == HRTIM_TIMERINDEX_TIMER_A) {
         COUNT_IRQ(HRTIM1_TIMD_IRQn);
 
-        __HAL_HRTIM_TIMER_CLEAR_IT(hhrtim, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_UPD);
+        __HAL_HRTIM_TIMER_CLEAR_IT(hhrtim, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_REP);
 
         // TODO: As ZFOC v1.1 use in-circuit current sampling, we can sample at any time.
         // If the corresponding timer is counting up, we just sampled in SVM vector 0, i.e. real current
@@ -255,7 +262,7 @@ void ControlLoop_IRQHandler(void) {
 
     motors[0].pwm_update_cb(timestamp + 3 * (HRTIM_PERIOD_CLOCKS * (HRTIM_REP + 1)));
 
-    // If we did everything right, the TimerA update handler should have been
+    // If we did everything right, the Timer A repetition handler should have been
     // called exactly once between the start of this function and now.
 
     if (timestamp_ != timestamp + HRTIM_PERIOD_CLOCKS * (HRTIM_REP + 1)) {

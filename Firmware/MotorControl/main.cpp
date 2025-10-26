@@ -310,7 +310,7 @@ void Zfoc::control_loop_cb(uint32_t timestamp) {
             axis.motor_.update(timestamp); // uses torque from controller and phase_vel from encoder
 
         MEASURE_TIME(axis.task_times_.current_controller_update)
-            axis.motor_.current_control_.update(timestamp); // uses the output of controller_ or open_loop_contoller_ and encoder_ or sensorless_estimator_ or acim_estimator_
+            axis.motor_.current_control_.update(timestamp); // uses the output of controller_ or open_loop_contoller_ and encoder_
     }
 
     // Tell the axis threads that the control loop has finished
@@ -354,7 +354,7 @@ uint32_t Zfoc::get_gpio_states() {
  */
 static void rtos_main(const void*) {
     // Start ADC for temperature measurements and user measurements
-    start_general_purpose_adc();
+    // start_general_purpose_adc();
 
     //osDelay(100);
     // Init communications (this requires the axis objects to be constructed)

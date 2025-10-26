@@ -139,15 +139,6 @@ void MX_HRTIM1_Init(void)
   {
     Error_Handler();
   }
-  pTimerCfg.InterruptRequests = HRTIM_TIM_IT_UPD;
-  pTimerCfg.PreloadEnable = HRTIM_PRELOAD_DISABLED;
-  pTimerCfg.DeadTimeInsertion = HRTIM_TIMDEADTIMEINSERTION_DISABLED;
-  pTimerCfg.DelayedProtectionMode = HRTIM_TIMER_D_E_DELAYEDPROTECTION_DISABLED;
-  pTimerCfg.ResetTrigger = HRTIM_TIMRESETTRIGGER_NONE;
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim1, HRTIM_TIMERINDEX_TIMER_D, &pTimerCfg) != HAL_OK)
-  {
-    Error_Handler();
-  }
   pCompareCfg.CompareValue = 0;
   if (HAL_HRTIM_WaveformCompareConfig(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_COMPAREUNIT_1, &pCompareCfg) != HAL_OK)
   {
@@ -245,17 +236,6 @@ void MX_HRTIM1_Init(void)
   {
     Error_Handler();
   }
-  pTimeBaseCfg.Period = HRTIM_PERIOD_CLOCKS * (HRTIM_REP + 1);
-  pTimeBaseCfg.RepetitionCounter = 0x00;
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim1, HRTIM_TIMERINDEX_TIMER_D, &pTimeBaseCfg) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  pTimerCtl.UpDownMode = HRTIM_TIMERUPDOWNMODE_UP;
-  if (HAL_HRTIM_WaveformTimerControl(&hhrtim1, HRTIM_TIMERINDEX_TIMER_D, &pTimerCtl) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN HRTIM1_Init 2 */
 
   /* USER CODE END HRTIM1_Init 2 */
@@ -277,8 +257,6 @@ void HAL_HRTIM_MspInit(HRTIM_HandleTypeDef* hrtimHandle)
     /* HRTIM1 interrupt Init */
     HAL_NVIC_SetPriority(HRTIM1_TIMA_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(HRTIM1_TIMA_IRQn);
-    HAL_NVIC_SetPriority(HRTIM1_TIMD_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(HRTIM1_TIMD_IRQn);
   /* USER CODE BEGIN HRTIM1_MspInit 1 */
 
   /* USER CODE END HRTIM1_MspInit 1 */
@@ -339,7 +317,6 @@ void HAL_HRTIM_MspDeInit(HRTIM_HandleTypeDef* hrtimHandle)
 
     /* HRTIM1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(HRTIM1_TIMA_IRQn);
-    HAL_NVIC_DisableIRQ(HRTIM1_TIMD_IRQn);
   /* USER CODE BEGIN HRTIM1_MspDeInit 1 */
 
   /* USER CODE END HRTIM1_MspDeInit 1 */

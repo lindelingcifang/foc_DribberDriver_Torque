@@ -24,7 +24,6 @@ public:
         float finish_distance = 100.0f;  // [rad]
         bool finish_on_vel = false;
         bool finish_on_distance = false;
-        bool finish_on_enc_idx = false;
     };
 
     struct TaskTimes {
@@ -44,7 +43,6 @@ public:
     };
 
     static LockinConfig_t default_calibration();
-    static LockinConfig_t default_sensorless();
     static LockinConfig_t default_lockin();
 
     struct CANConfig_t {
@@ -87,7 +85,6 @@ public:
         uint16_t dir_gpio_pin = 0;
 
         LockinConfig_t calibration_lockin = default_calibration();
-        LockinConfig_t sensorless_ramp = default_sensorless();
         LockinConfig_t general_lockin;
 
         CANConfig_t can;

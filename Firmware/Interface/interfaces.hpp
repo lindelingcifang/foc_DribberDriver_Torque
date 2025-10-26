@@ -144,7 +144,6 @@ public:
             ERROR_HALL_NOT_CALIBRATED_YET    = 0x00000200,
         };
         enum Mode {
-            MODE_INCREMENTAL                 = 0,
             MODE_HALL                        = 1,
             MODE_SINCOS                      = 2,
             MODE_UART_ABS                    = 0x100,
