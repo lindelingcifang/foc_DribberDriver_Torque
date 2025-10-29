@@ -36,6 +36,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+volatile uint32_t tim1_ticks;
 
 /* USER CODE END ET */
 

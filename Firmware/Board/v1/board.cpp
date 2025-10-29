@@ -14,7 +14,6 @@
 #include <usart.h>
 #include <cordic.h>
 #include <crc.h>
-#include <fmac.h>
 #include <main.h>
 #include <freertos_vars.h>
 
@@ -90,8 +89,8 @@ void system_init() {
 
 bool board_init() {
     // Disable default dual bank
-    HAL_FLASH_OB_Unlock();
-    HAL_FLASHEx_OB_DBankConfig(OB_DBANK_128_BITS);
+    // HAL_FLASH_OB_Unlock();
+    // HAL_FLASHEx_OB_DBankConfig(OB_DBANK_128_BITS);
 
     // Initialize all configured peripherals
     MX_GPIO_Init();
@@ -100,7 +99,6 @@ bool board_init() {
     // MX_CRC_Init(); // CRC is implemented in crc.hpp with flexible init value
     // MX_FDCAN2_Init();
     // MX_FDCAN3_Init();
-    MX_FMAC_Init();
     MX_HRTIM1_Init();
     MX_TIM8_Init();
     MX_USART2_UART_Init();

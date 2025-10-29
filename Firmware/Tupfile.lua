@@ -167,7 +167,6 @@ board_v1 = {
         'Src/cordic.c',
         'Src/crc.c',
         'Src/fdcan.c',
-        'Src/fmac.c',
         'Src/gpio.c',
         'Src/hrtim.c',
         'Src/main.c',

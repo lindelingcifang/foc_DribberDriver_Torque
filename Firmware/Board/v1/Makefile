@@ -43,7 +43,6 @@ Core/Src/adc.c \
 Core/Src/cordic.c \
 Core/Src/crc.c \
 Core/Src/fdcan.c \
-Core/Src/fmac.c \
 Core/Src/hrtim.c \
 Core/Src/tim.c \
 Core/Src/usart.c \
