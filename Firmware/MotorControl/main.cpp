@@ -8,7 +8,7 @@
 #include "interface_can.hpp"
 
 osSemaphoreId sem_can;
-const uint32_t stack_size_default_task = 128;
+const uint32_t stack_size_default_task = 512;
 
 #if defined(STM32G474xx)
 // Place FreeRTOS heap in core coupled memory for better performance
@@ -141,6 +141,7 @@ void Zfoc::clear_errors() {
 extern "C" {
 
 void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskName) {
+
     for(auto& axis: axes){
         axis.motor_.disarm();
     }
@@ -148,6 +149,7 @@ void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskN
 }
 
 void vApplicationIdleHook(void) {
+    volatile uint32_t free_heap = xPortGetFreeHeapSize();
     if (zfoc.system_stats_.fully_booted) {
         zfoc.system_stats_.uptime = xTaskGetTickCount();
         zfoc.system_stats_.min_heap_space = xPortGetMinimumEverFreeHeapSize();
@@ -374,6 +376,10 @@ static void rtos_main(const void*) {
     // Start PWM and enable adc interrupts/callbacks
     start_adc_pwm();
 
+    HAL_HRTIM_StateTypeDef hrtim_state;
+    hrtim_state = HAL_HRTIM_GetState(&hhrtim1);
+    int hrtim_state_int = static_cast<int>(hrtim_state);
+
     // Wait for up to 2s for motor to become ready to allow for error-free
     // startup. This delay gives the current sensor calibration time to
     // converge. If the DRV chip is unpowered, the motor will not become ready
@@ -426,17 +432,19 @@ extern "C" int main(void) {
     // Load configuration from NVM. This needs to happen after system_init()
     // since the flash interface must be initialized and before board_init()
     // since board initialization can depend on the config.
-    size_t config_size = 0;
-    bool success = config_manager.start_load()
-            && config_read_all()
-            && config_manager.finish_load(&config_size)
-            && config_apply_all();
-    if (success) {
-        zfoc.user_config_loaded_ = config_size;
-    } else {
-        config_clear_all();
-        config_apply_all();
-    }
+    // size_t config_size = 0;
+    // bool success = config_manager.start_load()
+    //         && config_read_all()
+    //         && config_manager.finish_load(&config_size)
+    //         && config_apply_all();
+    // if (success) {
+    //     zfoc.user_config_loaded_ = config_size;
+    // } else {
+    //     config_clear_all();
+    //     config_apply_all();
+    // }
+    config_clear_all();
+    config_apply_all();
 
     // Init board-specific peripherals
     if (!board_init()) {
@@ -551,6 +559,7 @@ extern "C" int main(void) {
     // Create main thread
     osThreadDef(defaultTask, rtos_main, osPriorityNormal, 0, stack_size_default_task / sizeof(StackType_t));
     defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+    volatile int free_stack = xPortGetFreeHeapSize();
 
     // Start scheduler
     osKernelStart();

@@ -63,6 +63,7 @@ static void run_state_machine_loop_wrapper(const void* ctx) {
 
 // @brief Starts run_state_machine_loop in a new thread
 void Axis::start_thread() {
+    volatile int free_heap = xPortGetFreeHeapSize();
     osThreadDef(thread_def, run_state_machine_loop_wrapper, thread_priority_, 0, stack_size_ / sizeof(StackType_t));
     thread_id_ = osThreadCreate(osThread(thread_def), this);
     thread_id_valid_ = true;

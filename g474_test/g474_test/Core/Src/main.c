@@ -99,8 +99,9 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_MspInit(&htim1);
-  HAL_TIM_Base_Start(&htim1);
+  HAL_TIM_Base_Start_IT(&htim1);
+  uint32_t enabled = __HAL_TIM_GET_IT_SOURCE(&htim1, TIM_IT_UPDATE);
+  enabled = htim1.Instance->DIER & TIM_DIER_UIE;
   /* USER CODE END 2 */
 
   /* Infinite loop */

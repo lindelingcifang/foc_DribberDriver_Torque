@@ -1,6 +1,6 @@
-/home/lennox/zfoc/g474_test/g474_test/build/Debug/CMakeFiles/g474_test.dir
-/home/lennox/zfoc/g474_test/g474_test/build/Debug/CMakeFiles/edit_cache.dir
-/home/lennox/zfoc/g474_test/g474_test/build/Debug/CMakeFiles/rebuild_cache.dir
-/home/lennox/zfoc/g474_test/g474_test/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
-/home/lennox/zfoc/g474_test/g474_test/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
-/home/lennox/zfoc/g474_test/g474_test/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
+/home/lxl/zfoc/g474_test/g474_test/build/Debug/CMakeFiles/g474_test.dir
+/home/lxl/zfoc/g474_test/g474_test/build/Debug/CMakeFiles/edit_cache.dir
+/home/lxl/zfoc/g474_test/g474_test/build/Debug/CMakeFiles/rebuild_cache.dir
+/home/lxl/zfoc/g474_test/g474_test/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+/home/lxl/zfoc/g474_test/g474_test/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+/home/lxl/zfoc/g474_test/g474_test/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

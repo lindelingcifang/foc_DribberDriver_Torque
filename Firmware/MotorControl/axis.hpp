@@ -12,6 +12,7 @@ class Axis;
 #include "task_timer.hpp"
 
 #include <array>
+#include <functional>
 
 class Axis : public ZfocIntf::AxisIntf {
 public:

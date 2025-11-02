@@ -97,7 +97,7 @@ bool board_init() {
     MX_DMA_Init();
     MX_CORDIC_Init();
     // MX_CRC_Init(); // CRC is implemented in crc.hpp with flexible init value
-    // MX_FDCAN2_Init();
+    MX_FDCAN2_Init();
     // MX_FDCAN3_Init();
     MX_HRTIM1_Init();
     MX_TIM8_Init();
@@ -147,12 +147,12 @@ void start_timers() {
         __HAL_TIM_ENABLE(&htim1);
 
         hadc1.Instance->CR &= ADC_CR_ADEN;
-
+        
         __HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_EOC);
         __HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_OVR);
 
-        __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_REP);
-        __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_REP);
+        __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
+        __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
     }
 }
 

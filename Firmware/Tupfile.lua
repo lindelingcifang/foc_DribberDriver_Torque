@@ -152,16 +152,17 @@ cmsis_pkg = {
 }
 
 board_v1 = {
-    root = 'Board/v1',
+    root = 'Board/v1/Core',
     include = {stm32g4xx_hal_pkg},
     include_dirs = {
         'Inc',
-        '../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F',
+        '../../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F',
+        '..',
     },
     code_files = {
-        'startup_stm32g474xx.s',
-        '../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c',
-        'board.cpp',
+        '../startup_stm32g474xx.s',
+        '../../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c',
+        '../board.cpp',
         'Src/adc.c',
         'Src/app_freertos.c',
         'Src/cordic.c',

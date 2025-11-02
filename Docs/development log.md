@@ -274,3 +274,6 @@ Packing conventions
 - Scaled fields:
   - In MSG_SET_INPUT_POS, velocity and torque are i16 with scale 0.001 (value = raw * 0.001).
 
+
+Changing stack_size_default_task from 128 to 512 fixed the stack-overflow problem.
+
