@@ -275,5 +275,15 @@ Packing conventions
   - In MSG_SET_INPUT_POS, velocity and torque are i16 with scale 0.001 (value = raw * 0.001).
 
 
-Changing stack_size_default_task from 128 to 512 fixed the stack-overflow problem.
+Changing stack_size_default_task from 128 to 512 fixed the stack-overflow problem.  
+
+Update on repetition must be enabled, or we can't enter repetition interrupt.  
+![alt text](<截图 2025-11-12 13-56-50.png>)  
+![alt text](<截图 2025-11-12 13-57-08.png>)  
+![alt text](image.png)  
+
+Well, let's not stick to HRTIM repetition counter (at least for now, let it go to hell). Just use Timer D to generate the timer_update interrupt.  
+
+When using 50kHz PWM frequency, timer_update interrupt would be triggered twice consecutively, without returning to control_loop_handler in between. As we change PWM frequency to 3125Hz, control_loop_handler will directly run through before the second timer_update interrupt happens. This is because we wait for ADC conversion to complete in the middle of control_loop_handler, which does not guarantee the secend timer_update would happen before control_loop_handler ends. To address this uncertainty, we wait for Timer A to "count down" (this cumbersome peripheral is actually running in up-counting mode, though I tried my best to make it count up and down) in addition. The above machanism also implies the upper limit of PWM frequency.  
+Wait, ADC was triggered at the same time as timer_update interrupt by Timer D. Now we try to trigger ADC in timer_update interrupt handler instead, and find that ADC conversion doesn't complete at all. This is most likely because $V_{DDA}$ is to low. But why we didn't get blocked forever before? Maybe because ADC wasn't triggered at all.  
 

@@ -58,7 +58,7 @@ void DMA1_Channel3_IRQHandler(void);
 void ADC1_2_IRQHandler(void);
 void TIM1_TRG_COM_TIM17_IRQHandler(void);
 void USART2_IRQHandler(void);
-void HRTIM1_TIMA_IRQHandler(void);
+void HRTIM1_TIMD_IRQHandler(void);
 void FDCAN2_IT0_IRQHandler(void);
 void FDCAN2_IT1_IRQHandler(void);
 /* USER CODE BEGIN EFP */

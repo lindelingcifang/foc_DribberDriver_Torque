@@ -373,12 +373,24 @@ static void rtos_main(const void*) {
         axis.encoder_.setup();
     }
 
+    volatile uint32_t output_state = HAL_HRTIM_WaveformGetOutputState(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
+    volatile uint32_t hrtim_mcr = hhrtim1.Instance->sMasterRegs.MCR;
+    volatile uint32_t timerA_cnt = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
+    volatile uint32_t timerA_isr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].TIMxISR;
+    volatile uint32_t timerA_cpt1xr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CPT1xR;
+
     // Start PWM and enable adc interrupts/callbacks
     start_adc_pwm();
 
-    HAL_HRTIM_StateTypeDef hrtim_state;
-    hrtim_state = HAL_HRTIM_GetState(&hhrtim1);
-    int hrtim_state_int = static_cast<int>(hrtim_state);
+    volatile HAL_TIM_StateTypeDef tim_state = HAL_TIM_Base_GetState(&htim1);
+    output_state = HAL_HRTIM_WaveformGetOutputState(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
+    hrtim_mcr = hhrtim1.Instance->sMasterRegs.MCR;
+    timerA_cnt = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
+    timerA_isr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].TIMxISR;
+    timerA_cpt1xr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CPT1xR;
+
+    osDelay(10);
+    timerA_cnt = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
 
     // Wait for up to 2s for motor to become ready to allow for error-free
     // startup. This delay gives the current sensor calibration time to

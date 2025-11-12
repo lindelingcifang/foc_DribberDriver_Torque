@@ -11,7 +11,7 @@ extern "C" {
 
 // Uncomment the following line to sacrifice 1kB of RAM for the ability to
 // monitor the number of times each interrupt fires.
-//#define ENABLE_IRQ_COUNTER
+#define ENABLE_IRQ_COUNTER
 
 #ifdef ENABLE_IRQ_COUNTER
 extern uint32_t irq_counters[];

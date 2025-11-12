@@ -110,8 +110,8 @@ bool board_init() {
     HAL_NVIC_SetPriority(ControlLoop_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(ControlLoop_IRQn);
 
-    HAL_NVIC_SetPriority(HRTIM1_TIMA_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(HRTIM1_TIMA_IRQn);
+    HAL_NVIC_SetPriority(HRTIM1_TIMD_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(HRTIM1_TIMD_IRQn);
 
     if (zfoc.config_.enable_can_a) {
         // The CAN initialization will (and must) init its own GPIOs before the
@@ -142,17 +142,24 @@ void start_timers() {
         // effect of starting the timers.
         hadc1.Instance->CR &= ADC_CR_ADDIS;
 
-        // HRTIM Master timer and timer A~D are set to start in sync on the
+        // HRTIM Master timer and timer A~C are set to start in sync on the
         // first TRGO from TIM1 enable event.
-        __HAL_TIM_ENABLE(&htim1);
+        // __HAL_TIM_ENABLE(&htim1);
+        HAL_HRTIM_WaveformCounterStart_IT(&hhrtim1, HRTIM_TIMERID_MASTER | HRTIM_TIMERID_TIMER_A 
+            | HRTIM_TIMERID_TIMER_B | HRTIM_TIMERID_TIMER_C | HRTIM_TIMERID_TIMER_D);
+        HAL_HRTIM_WaveformOutputStart(&hhrtim1, HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | HRTIM_OUTPUT_TB1 
+            | HRTIM_OUTPUT_TB2 | HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2);
+        HAL_TIM_Base_Start(&htim1);
 
         hadc1.Instance->CR &= ADC_CR_ADEN;
         
         __HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_EOC);
         __HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_OVR);
 
-        __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
-        __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
+        // __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
+        // __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
+        // __HAL_HRTIM_TIMER_CLEAR_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_UPD);
+        // __HAL_HRTIM_TIMER_ENABLE_IT(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_UPD);
     }
 }
 
@@ -190,19 +197,34 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     }
 }
 
+void HAL_HRTIM_RegistersUpdateCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t TimerIdx) {
+    if (TimerIdx == HRTIM_TIMERINDEX_TIMER_D) {
+        volatile uint32_t timerA_cnt = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
+        volatile uint32_t timerA_rep = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].REPxR;
+        volatile bool counting_down = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CPT1xR & HRTIM_CPT1R_DIR;
+        COUNT_IRQ(HRTIM1_TIMD_IRQn);
+    }
+}
+
 volatile uint32_t timestamp_ = 0;
 volatile bool counting_down_ = false;
 
 void HAL_HRTIM_RepetitionEventCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t TimerIdx) {
-    if (TimerIdx == HRTIM_TIMERINDEX_TIMER_A) {
+    if (TimerIdx == HRTIM_TIMERINDEX_TIMER_D) {
+        volatile uint32_t timerA_cnt = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
+        volatile uint32_t timerA_rep = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].REPxR;
+        volatile uint32_t timerA_output_level = HAL_HRTIM_WaveformGetOutputLevel(hhrtim, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
+        volatile uint32_t timerA_compare1 = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CMP1xR;
+
         COUNT_IRQ(HRTIM1_TIMD_IRQn);
 
-        __HAL_HRTIM_TIMER_CLEAR_IT(hhrtim, HRTIM_TIMERID_TIMER_A, HRTIM_TIM_IT_REP);
+        __HAL_HRTIM_TIMER_CLEAR_IT(hhrtim, HRTIM_TIMERINDEX_TIMER_A, HRTIM_TIM_IT_REP);
 
         // TODO: As ZFOC v1.1 use in-circuit current sampling, we can sample at any time.
         // If the corresponding timer is counting up, we just sampled in SVM vector 0, i.e. real current
         // If we are counting down, we just sampled in SVM vector 7, with zero current
-        bool counting_down = hhrtim->Instance->sTimerxRegs[0].CPT1xR & HRTIM_CPT1R_DIR;
+        // bool counting_down = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CPT1xR & HRTIM_CPT1R_DIR;
+        bool counting_down = (timerA_cnt > (HRTIM_PERIOD_CLOCKS));
     
         bool timer_update_missed = (counting_down_ == counting_down);
         if (timer_update_missed) {
@@ -211,7 +233,7 @@ void HAL_HRTIM_RepetitionEventCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t Tim
         }
 
         counting_down_ = counting_down;
-        timestamp_ += HRTIM_APB2_CLOCK_HZ * (HRTIM_REP + 1);
+        timestamp_ += HRTIM_PERIOD_CLOCKS * (HRTIM_REP + 1);
 
         if (!counting_down) {
             TaskTimer::enabled = zfoc.task_timers_armed_;
@@ -248,9 +270,18 @@ void ControlLoop_IRQHandler(void) {
 
     // By this time the ADCs for both M0 and M1 should have fired again. But
     // let's wait for them just to be sure.
+    // As we tune down PWM frequency, control_loop_handler will directly run 
+    // through before the second timer_update interrupt happens. This is because 
+    // we wait for ADC conversion to complete in the middle of control_loop_handksler, 
+    // which does not guarantee the secend timer_update would happen before 
+    // control_loop_handler ends. To address this uncertainty, we wait for 
+    // Timer A to "count down" in addition.
     MEASURE_TIME(zfoc.task_times_.dc_calib_wait) {
+        // while (!(ADC1->ISR & ADC_ISR_EOC) || !counting_down_);
+        while (!counting_down_); // counting_down_ is set in timer update IRQ
         while (!(ADC1->ISR & ADC_ISR_EOC));
     }
+    volatile bool adc_done = (ADC1->ISR & ADC_ISR_EOC);
 
     if (!fetch_and_reset_adcs(&current0)) {
         motors[0].disarm_with_error(Motor::ERROR_BAD_TIMING);
