@@ -215,6 +215,7 @@ void HAL_HRTIM_RepetitionEventCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t Tim
         volatile uint32_t timerA_rep = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].REPxR;
         volatile uint32_t timerA_output_level = HAL_HRTIM_WaveformGetOutputLevel(hhrtim, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
         volatile uint32_t timerA_compare1 = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CMP1xR;
+        volatile uint32_t adc_crc = ADC1->CR;
 
         COUNT_IRQ(HRTIM1_TIMD_IRQn);
 
@@ -269,19 +270,13 @@ void ControlLoop_IRQHandler(void) {
     zfoc.control_loop_cb(timestamp);
 
     // By this time the ADCs for both M0 and M1 should have fired again. But
-    // let's wait for them just to be sure.
-    // As we tune down PWM frequency, control_loop_handler will directly run 
-    // through before the second timer_update interrupt happens. This is because 
-    // we wait for ADC conversion to complete in the middle of control_loop_handksler, 
-    // which does not guarantee the secend timer_update would happen before 
-    // control_loop_handler ends. To address this uncertainty, we wait for 
-    // Timer A to "count down" in addition.
+    // let's wait for them just to be sure. 
+    // Wait for timer update event to ensure the correct timing. 
     MEASURE_TIME(zfoc.task_times_.dc_calib_wait) {
         // while (!(ADC1->ISR & ADC_ISR_EOC) || !counting_down_);
         while (!counting_down_); // counting_down_ is set in timer update IRQ
-        while (!(ADC1->ISR & ADC_ISR_EOC));
+        while (!(ADC1->ISR & ADC_ISR_EOS));
     }
-    volatile bool adc_done = (ADC1->ISR & ADC_ISR_EOC);
 
     if (!fetch_and_reset_adcs(&current0)) {
         motors[0].disarm_with_error(Motor::ERROR_BAD_TIMING);
