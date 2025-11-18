@@ -6,12 +6,12 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/Firmware/ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F",
                 "${workspaceFolder}/Firmware/Interface",
-                "${workspaceFolder}/Firmware/Board/v1/Inc",
+                "${workspaceFolder}/Firmware/Board/v1/Core/Inc",
                 "/usr/lib/arm-none-eabi/include",
-                "/usr/lib/arm-none-eabi/include/c++/9.2.1",
-                "/usr/lib/gcc/arm-none-eabi/9.2.1/",
-                "/usr/lib/gcc/arm-none-eabi/9.2.1/include",
-                "/usr/lib/gcc/arm-none-eabi/9.2.1/include-fixed"
+                "/usr/lib/arm-none-eabi/include/c++/14.2.1",
+                "/usr/lib/gcc/arm-none-eabi/14.2.1/",
+                "/usr/lib/gcc/arm-none-eabi/14.2.1/include",
+                "/usr/lib/gcc/arm-none-eabi/14.2.1/include-fixed"
             ],
             "compilerPath": "arm-none-eabi-g++",
             "intelliSenseMode": "gcc-arm",

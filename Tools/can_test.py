@@ -112,7 +112,8 @@ class ZFOCDriver:
                  bitrate: int = 500000, is_extended: bool = False):
         self.protocol = CANSimpleProtocol(node_id, is_extended)
         try:
-            self.bus = can.interface.Bus(channel=channel, bustype=bustype, bitrate=bitrate)
+            # socketcan不需要在这里设置bitrate，应该在系统层面配置
+            self.bus = can.interface.Bus(channel=channel, bustype=bustype)
             self.connected = True
         except Exception as e:
             print(f"无法连接到CAN总线: {e}")
@@ -231,6 +232,9 @@ class ZFOCDriver:
         )
         try:
             self.bus.send(msg)
+            # 添加调试信息
+            data_str = ' '.join([f'{b:02X}' for b in (data or [])])
+            print(f"[发送] ID=0x{msg_id:03X} ({msg_id}), 数据=[{data_str}], RTR={rtr}")
             return True
         except can.CanError as e:
             print(f"发送消息失败: {e}")

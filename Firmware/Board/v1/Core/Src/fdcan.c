@@ -61,7 +61,17 @@ void MX_FDCAN2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN2_Init 2 */
-
+  FDCAN_FilterTypeDef  FDCAN2_RXFilter;
+  FDCAN2_RXFilter.IdType=FDCAN_STANDARD_ID;                       //标准ID
+  FDCAN2_RXFilter.FilterIndex=0;                                  //滤波器索引                   
+  FDCAN2_RXFilter.FilterType=FDCAN_FILTER_RANGE;                   //滤波器类型
+  FDCAN2_RXFilter.FilterConfig=FDCAN_FILTER_TO_RXFIFO0;           //过滤器0关联到FIFO0  
+  FDCAN2_RXFilter.FilterID1=0x0000;                               //32位ID
+  FDCAN2_RXFilter.FilterID2=0x0000;                               //如果FDCAN配置为传统模式的话，这里是32位掩码
+  if(HAL_FDCAN_ConfigFilter(&hfdcan2,&FDCAN2_RXFilter)!=HAL_OK) //滤波器初始化
+  {
+    Error_Handler();
+  }
   /* USER CODE END FDCAN2_Init 2 */
 
 }
@@ -99,6 +109,17 @@ void MX_FDCAN3_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN3_Init 2 */
+  FDCAN_FilterTypeDef  FDCAN3_RXFilter;
+  FDCAN3_RXFilter.IdType=FDCAN_STANDARD_ID;                       //标准ID
+  FDCAN3_RXFilter.FilterIndex=0;                                  //滤波器索引                   
+  FDCAN3_RXFilter.FilterType=FDCAN_FILTER_RANGE;                   //滤波器类型
+  FDCAN3_RXFilter.FilterConfig=FDCAN_FILTER_TO_RXFIFO0;           //过滤器0关联到FIFO0  
+  FDCAN3_RXFilter.FilterID1=0x0000;                               //32位ID
+  FDCAN3_RXFilter.FilterID2=0x0000;                               //如果FDCAN配置为传统模式的话，这里是32位掩码
+  if(HAL_FDCAN_ConfigFilter(&hfdcan3,&FDCAN3_RXFilter)!=HAL_OK) //滤波器初始化
+  {
+    Error_Handler();
+  }
 
   /* USER CODE END FDCAN3_Init 2 */
 

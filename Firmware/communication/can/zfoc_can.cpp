@@ -6,6 +6,8 @@
 #include "freertos_vars.h"
 #include "utils.hpp"
 
+#include "fdcan.h"
+
 // Safer context handling via maps instead of arrays
 // #include <unordered_map>
 // std::unordered_map<CAN_HandleTypeDef *, ZfocCAN *> ctxMap;
@@ -33,18 +35,20 @@ HAL_StatusTypeDef FDCAN_ResetError(FDCAN_HandleTypeDef *hfdcan) {
 }
 
 bool ZfocCAN::reinit() {
-    HAL_FDCAN_Stop(handle_);
-    FDCAN_ResetError(handle_);
+    // HAL_FDCAN_Stop(handle_);
+    // FDCAN_ResetError(handle_);
     return (HAL_FDCAN_Init(handle_) == HAL_OK)
+        && (HAL_FDCAN_ConfigFilter(handle_, &filter_) == HAL_OK)
         && (HAL_FDCAN_Start(handle_) == HAL_OK)
         && (HAL_FDCAN_ActivateNotification(handle_, FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO0_FULL | 
             // FDCAN_IT_RX_FIFO1_NEW_MESSAGE | FDCAN_IT_RX_FIFO1_FULL | 
             FDCAN_IT_TX_FIFO_EMPTY, 0) == HAL_OK);
 }
 
-bool ZfocCAN::start_server(FDCAN_HandleTypeDef* handle) {
+bool ZfocCAN::start_server(FDCAN_HandleTypeDef* handle, FDCAN_GlobalTypeDef* instance) {
     handle_ = handle;
 
+    handle_->Instance = instance;
     handle_->Init.ClockDivider = FDCAN_CLOCK_DIV1;
     handle_->Init.FrameFormat = FDCAN_FRAME_CLASSIC;
     handle_->Init.Mode = FDCAN_MODE_NORMAL;
@@ -62,6 +66,13 @@ bool ZfocCAN::start_server(FDCAN_HandleTypeDef* handle) {
     handle_->Init.StdFiltersNbr = 0;
     handle_->Init.ExtFiltersNbr = 0;
     handle_->Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+
+    filter_.IdType = FDCAN_STANDARD_ID;
+    filter_.FilterIndex = 0;
+    filter_.FilterType = FDCAN_FILTER_RANGE;
+    filter_.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+    filter_.FilterID1 = 0;
+    filter_.FilterID2 = 0;
     if (!reinit()) {
         return false;
     }
@@ -125,6 +136,7 @@ bool ZfocCAN::set_baud_rate(uint32_t baud_rate) {
 
 void ZfocCAN::process_rx_fifo(uint32_t fifo) {
     while (HAL_FDCAN_GetRxFifoFillLevel(handle_, fifo)) {
+        volatile uint32_t fill_level = HAL_FDCAN_GetRxFifoFillLevel(handle_, fifo);
         FDCAN_RxHeaderTypeDef header;
         can_Message_t rxmsg;
         HAL_FDCAN_GetRxMessage(handle_, fifo, &header, rxmsg.buf);

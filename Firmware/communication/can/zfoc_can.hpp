@@ -26,7 +26,7 @@ enum {
 class ZfocCAN : public CanBusBase, public ZfocIntf::CanIntf {
 public:
     struct Config_t {
-        uint32_t baud_rate = CAN_BAUD_250K;
+        uint32_t baud_rate = CAN_BAUD_1M;
         Protocol protocol = PROTOCOL_SIMPLE;
 
         ZfocCAN* parent = nullptr; // set in apply_config()
@@ -36,7 +36,7 @@ public:
     ZfocCAN() {}
 
     bool apply_config();
-    bool start_server(FDCAN_HandleTypeDef* handle);
+    bool start_server(FDCAN_HandleTypeDef* handle, FDCAN_GlobalTypeDef* instance);
 
     Error error_ = ERROR_NONE;
 
@@ -67,6 +67,7 @@ private:
     // we don't need that many.
     std::array<ZfocCANSubscription, 8> subscriptions_;
     FDCAN_HandleTypeDef *handle_ = nullptr;
+    FDCAN_FilterTypeDef filter_ = {};
 };
 
 #endif  // __ODRIVE_CAN_HPP

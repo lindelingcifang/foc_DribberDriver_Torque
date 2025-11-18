@@ -290,3 +290,18 @@ Wait, ADC was triggered at the same time as timer_update interrupt by Timer D. N
 For detecting ADC conversion completion, use EOS flag instead of EOC as we have configured. This may be the reason why ADC conversion never completes!!  
 ![alt text](image-1.png)
 
+Configure filter, or fdcan won't work.  
+![alt text](image-2.png)  
+Configure hfdcan.Instance before initialization.
+
+![alt text](image-3.png)  
+I have misunderstood the function of V_REF+ in ADC. It is not the balance point, but the constraint of maximum input voltage. So I'm connecting V_REF+ to V_DDA.  
+![alt text](image-4.png)  
+Unfortunately, we can't connect V_REF+ to 3.3V directly, as it is required by the current sense amplifiers. So we use voltage reference buffer instead.  
+![alt text](image-5.png)  
+![alt text](image-6.png)  
+![alt text](image-7.png)  
+![alt text](image-8.png)  
+![alt text](image-9.png)  
+
+
