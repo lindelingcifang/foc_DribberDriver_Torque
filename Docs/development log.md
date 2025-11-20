@@ -305,6 +305,6 @@ Unfortunately, we can't connect V_REF+ to 3.3V directly, as it is required by th
 ![alt text](image-9.png)  
 ![alt text](image-10.png)  
 ![alt text](image-11.png)  
-
+What the hell!! It seems that ADC1 cannot work in Zfoc, but behaves normally in g474_test. Even when we only exchange the pins of ADC1 and ADC3, all ADCs won't get ready (in ISR) at all! Let's just use two of three phase current measurements for now.
 
 

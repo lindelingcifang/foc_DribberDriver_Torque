@@ -18,7 +18,7 @@
 
 #include <stm32_system.h>
 
-#define SHUNT_RESISTANCE (8e-6f)    // [Ohm] shunt resistor value
+#define SHUNT_RESISTANCE (8e-3f)    // [Ohm] shunt resistor value
 
 #define AXIS_COUNT (1)
 

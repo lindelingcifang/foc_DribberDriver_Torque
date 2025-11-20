@@ -108,14 +108,20 @@ bool board_init() {
     MX_TIM8_Init();
     MX_USART2_UART_Init();
     MX_ADC1_Init();
+    MX_ADC2_Init();
+    MX_ADC3_Init();
+    MX_ADC4_Init();
     MX_TIM1_Init();
 
-    HAL_ADC_Start_DMA(&hadc1, adc_vals, ADC_CHANNEL_COUNT); // In DMA cirular mode, data length does't matter
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_Start(&hadc2);
+    HAL_ADC_Start(&hadc3);
+    HAL_ADC_Start(&hadc4);
     
     HAL_NVIC_SetPriority(ControlLoop_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(ControlLoop_IRQn);
 
-    HAL_NVIC_SetPriority(HRTIM1_TIMD_IRQn, 4, 0);
+    HAL_NVIC_SetPriority(HRTIM1_TIMD_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(HRTIM1_TIMD_IRQn);
 
     if (zfoc.config_.enable_can_a) {
@@ -169,26 +175,35 @@ void start_timers() {
 }
 
 static bool fetch_and_reset_adcs(std::optional<Iph_ABC_t>* current0) {
-    bool all_adcs_done = (ADC1->ISR & ADC_ISR_EOS) == ADC_ISR_EOS;
+    bool all_adcs_done = (ADC2->ISR & ADC_ISR_EOC)
+        && (ADC3->ISR & ADC_ISR_EOC) && (ADC4->ISR & ADC_ISR_EOC);
     if (!all_adcs_done) {
         return false;
     }
 
     // FIXME: Get vbus from CAN_B
 
-    volatile uint32_t adc1_dr = ADC1->DR;
-    volatile uint32_t adc1_cfgr = ADC1->CFGR;
+    // volatile uint32_t adc1_dr = ADC1->DR;
+    // volatile uint32_t adc4_dr = ADC4->DR;
+    volatile uint32_t adc1_cr = ADC1->CR;
     volatile uint32_t adc1_isr = ADC1->ISR;
+    volatile uint32_t adc3_cr = ADC3->CR;
+    volatile uint32_t adc3_isr = ADC3->ISR;
+    volatile uint32_t adc4_cr = ADC4->CR;
+    volatile uint32_t adc4_isr = ADC4->ISR;
 
-    std::optional<float> phA = motors[0].phase_current_from_adcval(adc_vals[1]);
-    std::optional<float> phB = motors[0].phase_current_from_adcval(adc_vals[2]);
-    std::optional<float> phC = motors[0].phase_current_from_adcval(adc_vals[3]);
-    if (phA.has_value() && phB.has_value() && phC.has_value()) {
-        *current0 = {*phA, *phB, *phC};
+    std::optional<float> phA = motors[0].phase_current_from_adcval(ADC4->DR);
+    std::optional<float> phB = motors[0].phase_current_from_adcval(ADC3->DR);
+    // std::optional<float> phC = motors[0].phase_current_from_adcval(ADC1->DR);
+    if (phA.has_value() && phB.has_value()) {
+        *current0 = {*phA, *phB, -*phA - *phB};
     }
 
     // Clear ADC flags
-    ADC1->ISR = ~(ADC_ISR_EOS | ADC_ISR_OVR);
+    // ADC1->ISR = ~(ADC_ISR_EOC | ADC_ISR_OVR);
+    ADC2->ISR = ~(ADC_ISR_EOC | ADC_ISR_OVR);
+    ADC3->ISR = ~(ADC_ISR_EOC | ADC_ISR_OVR);
+    ADC4->ISR = ~(ADC_ISR_EOC | ADC_ISR_OVR);
 
     return true;
 }
@@ -286,7 +301,7 @@ void ControlLoop_IRQHandler(void) {
     MEASURE_TIME(zfoc.task_times_.dc_calib_wait) {
         // while (!(ADC1->ISR & ADC_ISR_EOC) || !counting_down_);
         while (!counting_down_); // counting_down_ is set in timer update IRQ
-        while (!(ADC1->ISR & ADC_ISR_EOS));
+        while (!(ADC3->ISR & ADC_ISR_EOC));
     }
 
     if (!fetch_and_reset_adcs(&current0)) {

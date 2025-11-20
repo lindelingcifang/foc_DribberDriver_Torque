@@ -305,7 +305,7 @@ bool Motor::setup() {
     float max_unity_gain_current = kMargin * max_output_swing * shunt_conductance_; // [A]
     float requested_gain = max_unity_gain_current / config_.requested_current_range; // [V/V]
     
-    float actual_gain = 1.0f;
+    float actual_gain = 20.0f;
 
     // Values for current controller
     phase_current_rev_gain_ = 1.0f / actual_gain;
