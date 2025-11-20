@@ -67,7 +67,11 @@
         "hrtim.h": "c",
         "stm32g4xx_hal_conf.h": "c",
         "stm32g4xx_hal_rcc.h": "c",
-        "text_encoding": "c"
+        "text_encoding": "c",
+        "charconv": "cpp",
+        "format": "cpp",
+        "numbers": "cpp",
+        "span": "cpp"
     },
     "cmake.sourceDirectory": "/home/lxl/zfoc/g474_test/g474_test",
 }

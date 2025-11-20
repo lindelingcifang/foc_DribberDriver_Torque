@@ -93,8 +93,8 @@ bool board_init() {
     // HAL_FLASHEx_OB_DBankConfig(OB_DBANK_128_BITS);
 
     // Enable voltage reference buffer
-    HAL_SYSCFG_VREFBUF_VoltageScalingConfig(SYSCFG_VREFBUF_VOLTAGE_SCALE1);
-    HAL_SYSCFG_VREFBUF_HighImpedanceConfig(SYSCFG_VREFBUF_HIGH_IMPEDANCE_ENABLE);
+    HAL_SYSCFG_VREFBUF_VoltageScalingConfig(SYSCFG_VREFBUF_VOLTAGE_SCALE2);
+    HAL_SYSCFG_VREFBUF_HighImpedanceConfig(SYSCFG_VREFBUF_HIGH_IMPEDANCE_DISABLE);
     HAL_SYSCFG_EnableVREFBUF();
 
     // Initialize all configured peripherals
@@ -111,11 +111,11 @@ bool board_init() {
     MX_TIM1_Init();
 
     HAL_ADC_Start_DMA(&hadc1, adc_vals, ADC_CHANNEL_COUNT); // In DMA cirular mode, data length does't matter
-
+    
     HAL_NVIC_SetPriority(ControlLoop_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(ControlLoop_IRQn);
 
-    HAL_NVIC_SetPriority(HRTIM1_TIMD_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(HRTIM1_TIMD_IRQn, 4, 0);
     HAL_NVIC_EnableIRQ(HRTIM1_TIMD_IRQn);
 
     if (zfoc.config_.enable_can_a) {
@@ -220,6 +220,8 @@ volatile bool counting_down_ = false;
 
 void HAL_HRTIM_RepetitionEventCallback(HRTIM_HandleTypeDef *hhrtim, uint32_t TimerIdx) {
     if (TimerIdx == HRTIM_TIMERINDEX_TIMER_D) {
+        // HAL_ADC_Start_DMA(&hadc1, adc_vals, ADC_CHANNEL_COUNT); // Restart ADC DMA for next round
+
         volatile uint32_t timerA_cnt = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
         volatile uint32_t timerA_rep = hhrtim->Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].REPxR;
         volatile uint32_t timerA_output_level = HAL_HRTIM_WaveformGetOutputLevel(hhrtim, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
@@ -307,5 +309,5 @@ void ControlLoop_IRQHandler(void) {
     TaskTimer::enabled = false;
 }
 
-}
+} // extern "C"
 
