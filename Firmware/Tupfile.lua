@@ -74,6 +74,7 @@ zfoc_firmware_pkg = {
         'Drivers/STM32/stm32_gpio.cpp',
         'Drivers/STM32/stm32_nvm.c',
         'Drivers/STM32/stm32_uart.cpp',
+        'Drivers/STM32/stm32_i2c.cpp',
         'Drivers/STM32/cordic_cos_sin.cpp',
         'communication/communication.cpp',
         'communication/can/can_simple.cpp',
@@ -112,6 +113,8 @@ stm32g4xx_hal_pkg = {
         'Src/stm32g4xx_hal_tim.c',
         'Src/stm32g4xx_hal_uart_ex.c',
         'Src/stm32g4xx_hal_uart.c',
+        'Src/stm32g4xx_hal_i2c_ex.c',
+        'Src/stm32g4xx_hal_i2c.c',
         'Src/stm32g4xx_hal.c',
         'Src/stm32g4xx_ll_adc.c'
     },
@@ -179,6 +182,7 @@ board_v1 = {
         'Src/system_stm32g4xx.c',
         'Src/tim.c',
         'Src/usart.c',
+        'Src/i2c.c',
         'Src/dma.c',
     },
     cflags = {

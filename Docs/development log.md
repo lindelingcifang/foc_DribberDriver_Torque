@@ -305,6 +305,24 @@ Unfortunately, we can't connect V_REF+ to 3.3V directly, as it is required by th
 ![alt text](image-9.png)  
 ![alt text](image-10.png)  
 ![alt text](image-11.png)  
+```cpp
+  // Enable voltage reference buffer
+  HAL_SYSCFG_VREFBUF_VoltageScalingConfig(SYSCFG_VREFBUF_VOLTAGE_SCALE2);
+  HAL_SYSCFG_VREFBUF_HighImpedanceConfig(SYSCFG_VREFBUF_HIGH_IMPEDANCE_DISABLE);
+  HAL_SYSCFG_EnableVREFBUF();
+```
 What the hell!! It seems that ADC1 cannot work in Zfoc, but behaves normally in g474_test. Even when we only exchange the pins of ADC1 and ADC3, all ADCs won't get ready (in ISR) at all! Let's just use two of three phase current measurements for now.
 
+It seems that FDCAN's not working is because there's no receiver.  
+Well, not so simple...
+
+Cases:  
+1. discharged, j-link: success
+2. no discharge, j-link: fail
+3. discharged, 5v: fail
+4. no discharge, 5v: fail
+
+FDCAN2 and FDCAN3 can't work meanwhile. Fix the race state.  
+
+![alt text](image-12.png)
 

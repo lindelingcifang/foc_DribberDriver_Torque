@@ -8,12 +8,15 @@ class Encoder;
 #include <interfaces.hpp>
 #include "component.hpp"
 #include <stm32_uart.hpp>
+#include "stm32_i2c.hpp"
 
 #define ENCODER_UART_BAUDRATE 115200
 
 class Encoder : public ZfocIntf::EncoderIntf {
 public:
     static constexpr uint32_t MODE_FLAG_ABS = 0x100;
+    static constexpr uint32_t MODE_FLAG_UART = 0x010;
+    static constexpr uint32_t MODE_FLAG_I2C  = 0x020;
     static constexpr std::array<float, 6> hall_edge_defaults = 
         {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
 
@@ -25,7 +28,7 @@ public:
         float bandwidth = 1000.0f;
         int32_t phase_offset = 0;        // Offset between encoder count and rotor electrical phase
         float phase_offset_float = 0.0f; // Sub-count phase alignment offset
-        int32_t cpr = (2048 * 4);   // Default resolution of CUI-AMT102 encoder,
+        int32_t cpr = 0x01 << 14;   // Default resolution of MT6701 encoder,
         bool pre_calibrated = false; // If true, this means the offset stored in
                                     // configuration is valid and does not need
                                     // be determined by run_offset_calibration.
@@ -48,6 +51,8 @@ public:
     Encoder(TIM_HandleTypeDef* timer,
             Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio, 
             Stm32Uart* uart_);
+
+    Encoder(Stm32I2c* i2c, Stm32Uart* uart);
     
     bool apply_config(ZfocIntf::MotorIntf::MotorType motor_type);
     void setup();
@@ -79,9 +84,11 @@ public:
     Stm32Gpio hallB_gpio_;
     Stm32Gpio hallC_gpio_;
     Stm32Uart* uart_;    
+    Stm32I2c* i2c_;
     Axis* axis_ = nullptr; // set by Axis constructor
 
     Config_t config_;
+    Mode mode_ = MODE_HALL;
 
     Error error_ = ERROR_NONE;
     bool is_ready_ = false;
@@ -99,6 +106,7 @@ public:
     float calib_scan_response_ = 0.0f; // debug report from offset calib
     int32_t pos_abs_ = 0;
     float uart_error_rate_ = 0.0f;
+    float i2c_error_rate_ = 0.0f;
 
     OutputPort<float> pos_estimate_ = 0.0f; // [turn]
     OutputPort<float> vel_estimate_ = 0.0f; // [turn/s]
@@ -125,13 +133,16 @@ public:
     bool abs_uart_start_transaction();
     void abs_uart_cb(bool success);
     bool abs_uart_pos_updated_ = false;
-    Mode mode_ = MODE_HALL;
-    Stm32Gpio abs_uart_cs_gpio_;
-    uint32_t abs_uart_cr1;
-    uint32_t abs_uart_cr2;
     uint16_t abs_uart_dma_tx_[1] = {0xFFFF};
     uint16_t abs_uart_dma_rx_[1];
     Stm32Uart::UartTask uart_task_;
+
+    bool abs_i2c_start_transaction();
+    void abs_i2c_cb(bool success);
+    bool abs_i2c_pos_updated_ = false;
+    uint8_t abs_i2c_dma_tx_[2];
+    uint8_t abs_i2c_dma_rx_[2];
+    Stm32I2c::I2cTask i2c_task_;
 
     constexpr float getCoggingRatio(){
         return 1.0f / 3600.0f;

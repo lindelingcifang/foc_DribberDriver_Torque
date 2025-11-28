@@ -73,7 +73,7 @@ void MX_HRTIM1_Init(void)
   }
   pTimeBaseCfg.Period = HRTIM_PERIOD_CLOCKS * 2;
   pTimeBaseCfg.RepetitionCounter = HRTIM_REP;
-  pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV4;
+  pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_MUL4;
   pTimeBaseCfg.Mode = HRTIM_MODE_CONTINUOUS;
   if (HAL_HRTIM_TimeBaseConfig(&hhrtim1, HRTIM_TIMERINDEX_MASTER, &pTimeBaseCfg) != HAL_OK)
   {
@@ -103,7 +103,7 @@ void MX_HRTIM1_Init(void)
     Error_Handler();
   }
   pTimerCtl.UpDownMode = HRTIM_TIMERUPDOWNMODE_UPDOWN;
-  pTimerCtl.GreaterCMP1 = HRTIM_TIMERGTCMP1_EQUAL;
+  pTimerCtl.GreaterCMP1 = HRTIM_TIMERGTCMP1_GREATER;
   pTimerCtl.DualChannelDacEnable = HRTIM_TIMER_DCDE_DISABLED;
   if (HAL_HRTIM_WaveformTimerControl(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, &pTimerCtl) != HAL_OK)
   {
@@ -180,7 +180,7 @@ void MX_HRTIM1_Init(void)
   }
   pOutputCfg.Polarity = HRTIM_OUTPUTPOLARITY_HIGH;
   pOutputCfg.SetSource = HRTIM_OUTPUTSET_TIMCMP1;
-  pOutputCfg.ResetSource = HRTIM_OUTPUTRESET_TIMCMP1;
+  pOutputCfg.ResetSource = HRTIM_OUTPUTRESET_NONE;
   pOutputCfg.IdleMode = HRTIM_OUTPUTIDLEMODE_NONE;
   pOutputCfg.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
   pOutputCfg.FaultLevel = HRTIM_OUTPUTFAULTLEVEL_NONE;
@@ -190,7 +190,6 @@ void MX_HRTIM1_Init(void)
   {
     Error_Handler();
   }
-  pOutputCfg.ResetSource = HRTIM_OUTPUTRESET_NONE;
   if (HAL_HRTIM_WaveformOutputConfig(&hhrtim1, HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB1, &pOutputCfg) != HAL_OK)
   {
     Error_Handler();
@@ -200,6 +199,7 @@ void MX_HRTIM1_Init(void)
     Error_Handler();
   }
   pOutputCfg.SetSource = HRTIM_OUTPUTSET_NONE;
+  pOutputCfg.ResetSource = HRTIM_OUTPUTRESET_TIMCMP1;
   if (HAL_HRTIM_WaveformOutputConfig(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA2, &pOutputCfg) != HAL_OK)
   {
     Error_Handler();

@@ -25,6 +25,7 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "hrtim.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"

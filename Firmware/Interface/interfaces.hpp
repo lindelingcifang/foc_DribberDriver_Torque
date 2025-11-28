@@ -141,12 +141,14 @@ public:
             ERROR_ILLEGAL_HALL_STATE         = 0x00000010,
             ERROR_INDEX_NOT_FOUND_YET        = 0x00000020,
             ERROR_ABS_UART_COM_FAIL          = 0x00000040,
+            ERROR_ABS_I2C_COM_FAIL           = 0x00000080,
             ERROR_HALL_NOT_CALIBRATED_YET    = 0x00000200,
         };
         enum Mode {
             MODE_HALL                        = 1,
             MODE_SINCOS                      = 2,
-            MODE_UART_ABS                    = 0x100,
+            MODE_UART_ABS                    = 0x110,
+            MODE_I2C_ABS_MT6701              = 0x120,
         };
     };
     class TrapezoidalTrajectoryIntf {

@@ -28,6 +28,7 @@ uint32_t adc_vals[ADC_CHANNEL_COUNT] = {1, 1, 1, 1};
 #define ControlLoop_IRQn SPI1_IRQn
 
 Stm32Uart uart2(&huart2);
+Stm32I2c i2c1(&hi2c1);
 
 Motor motors[AXIS_COUNT] = {
     {
@@ -37,12 +38,19 @@ Motor motors[AXIS_COUNT] = {
     }
 };
 
+// FIXME: hall encoder is not supported yet
+// Encoder encoders[AXIS_COUNT] = {
+//     {
+//         &htim8,
+//         {GPIOA, GPIO_PIN_15}, // hallA
+//         {GPIOB, GPIO_PIN_8}, // hallB
+//         {GPIOB, GPIO_PIN_9}, // hallC
+//         &uart2
+//     }
+// };
 Encoder encoders[AXIS_COUNT] = {
     {
-        &htim8,
-        {GPIOA, GPIO_PIN_15}, // hallA
-        {GPIOB, GPIO_PIN_8}, // hallB
-        {GPIOB, GPIO_PIN_9}, // hallC
+        &i2c1,
         &uart2
     }
 };
@@ -105,7 +113,7 @@ bool board_init() {
     // MX_FDCAN2_Init();
     // MX_FDCAN3_Init(); // FDCAN inits are done in ZfocCAN
     MX_HRTIM1_Init();
-    MX_TIM8_Init();
+    // MX_TIM8_Init();
     MX_USART2_UART_Init();
     MX_ADC1_Init();
     MX_ADC2_Init();

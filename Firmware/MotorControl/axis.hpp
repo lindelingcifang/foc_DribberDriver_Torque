@@ -50,7 +50,7 @@ public:
         uint32_t node_id = 0;
         bool is_extended = false;
         uint32_t heartbeat_rate_ms = 100;
-        uint32_t encoder_rate_ms = 10;
+        uint32_t encoder_rate_ms = 0;
         uint32_t motor_error_rate_ms = 0;
         uint32_t encoder_error_rate_ms = 0;
         uint32_t controller_error_rate_ms = 0;

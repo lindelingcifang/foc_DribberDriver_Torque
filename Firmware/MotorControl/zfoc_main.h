@@ -52,7 +52,7 @@ struct BoardConfig_t {
     bool enable_uart = true;
     uint32_t uart_baudrate = 115200;
     bool enable_can_a = true;
-    bool enable_can_b = true;
+    bool enable_can_b = false;
     float max_regen_current = 0.0f;
     float brake_resistance = DEFAULT_BRAKE_RESISTANCE;
     bool enable_brake_resistor = false;

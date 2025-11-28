@@ -35,8 +35,8 @@ HAL_StatusTypeDef FDCAN_ResetError(FDCAN_HandleTypeDef *hfdcan) {
 }
 
 bool ZfocCAN::reinit() {
-    // HAL_FDCAN_Stop(handle_);
-    // FDCAN_ResetError(handle_);
+    HAL_FDCAN_Stop(handle_);
+    FDCAN_ResetError(handle_);
     return (HAL_FDCAN_Init(handle_) == HAL_OK)
         && (HAL_FDCAN_ConfigFilter(handle_, &filter_) == HAL_OK)
         && (HAL_FDCAN_Start(handle_) == HAL_OK)
@@ -182,6 +182,8 @@ bool ZfocCAN::send_message(const can_Message_t &txmsg) {
     header.FDFormat = FDCAN_CLASSIC_CAN;
     header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
     header.MessageMarker = 0;
+
+    volatile uint32_t free_level = HAL_FDCAN_GetTxFifoFreeLevel(handle_);
 
     if (!HAL_FDCAN_GetTxFifoFreeLevel(handle_)) {
         return false;

@@ -11,6 +11,11 @@ Encoder::Encoder(TIM_HandleTypeDef* timer,
         uart_(uart)
 {
 }
+Encoder::Encoder(Stm32I2c* i2c, Stm32Uart* uart) :
+        i2c_(i2c),
+        uart_(uart)
+{
+}
 
 bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
     config_.parent = this;
@@ -26,7 +31,8 @@ bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
 }
 
 void Encoder::setup() {
-    HAL_TIM_Encoder_Start(timer_, TIM_CHANNEL_ALL);
+    if (timer_)
+        HAL_TIM_Encoder_Start(timer_, TIM_CHANNEL_ALL);
 
     mode_ = config_.mode;
 
@@ -400,7 +406,11 @@ void Encoder::sample_now() {
 
         case MODE_UART_ABS: {
             abs_uart_start_transaction();
-        }
+        } break;
+
+        case MODE_I2C_ABS_MT6701: {
+            abs_i2c_start_transaction();
+        } break;
 
         default: {
            set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
@@ -429,7 +439,7 @@ void Encoder::decode_hall_samples() {
 }
 
 bool Encoder::abs_uart_start_transaction() {
-    if (mode_ & MODE_FLAG_ABS){
+    if ((mode_ & MODE_FLAG_ABS) && (mode_ & MODE_FLAG_UART)){
         if (Stm32Uart::acquire_task(&uart_task_)) {
             uart_task_.baudrate = ENCODER_UART_BAUDRATE;
             uart_task_.tx_buf = (uint8_t*)abs_uart_dma_tx_;
@@ -440,6 +450,27 @@ bool Encoder::abs_uart_start_transaction() {
             uart_task_.next = nullptr;
             
             uart_->transfer_async(&uart_task_);
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Encoder::abs_i2c_start_transaction() {
+    if ((mode_ & MODE_FLAG_ABS) && (mode_ & MODE_FLAG_I2C)){
+        if (Stm32I2c::acquire_task(&i2c_task_)) {
+            i2c_task_.dev_addr = 0x06;
+            i2c_task_.reg_addrs[0] = 0x03;
+            i2c_task_.reg_addrs[1] = 0x04;
+            i2c_task_.tx_buf = nullptr;
+            i2c_task_.rx_buf = abs_i2c_dma_rx_;
+            i2c_task_.length = 2;
+            i2c_task_.on_complete = [](void* ctx, bool success) { ((Encoder*)ctx)->abs_i2c_cb(success); };
+            i2c_task_.on_complete_ctx = this;
+            i2c_task_.next = nullptr;
+            
+            i2c_->transfer_async(&i2c_task_);
         } else {
             return false;
         }
@@ -486,6 +517,35 @@ void Encoder::abs_uart_cb(bool success) {
 
 done:
     Stm32Uart::release_task(&uart_task_);
+}
+
+void Encoder::abs_i2c_cb(bool success) {
+    uint16_t pos;
+
+    if (!success) {
+        goto done;
+    }
+
+    switch (mode_) {
+        case MODE_I2C_ABS_MT6701: {
+            pos = ((uint16_t)abs_i2c_dma_rx_[0] << 6) | (uint16_t)abs_i2c_dma_rx_[1];
+            pos &= 0x3FFF; // 14-bit position
+        } break;
+
+        default: {
+           set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
+           goto done;
+        } break;
+    }
+
+    pos_abs_ = pos;
+    abs_i2c_pos_updated_ = true;
+    if (config_.pre_calibrated) {
+        is_ready_ = true;
+    }
+
+done:
+    Stm32I2c::release_task(&i2c_task_);
 }
 
 // Note that this may return counts +1 or -1 without any wrapping
@@ -604,6 +664,28 @@ bool Encoder::update() {
             }
 
         }break;
+
+        case MODE_I2C_ABS_MT6701: {
+            if (abs_i2c_pos_updated_ == false) {
+                // Low pass filter the error
+                i2c_error_rate_ += current_meas_period * (1.0f - i2c_error_rate_);
+                if (i2c_error_rate_ > 0.05f) {
+                    set_error(ERROR_ABS_I2C_COM_FAIL);
+                    return false;
+                }
+            } else {
+                // Low pass filter the error
+                i2c_error_rate_ += current_meas_period * (0.0f - i2c_error_rate_);
+            }
+
+            abs_i2c_pos_updated_ = false;
+            delta_enc = pos_abs_latched - count_in_cpr_; //LATCH
+            delta_enc = mod(delta_enc, config_.cpr);
+            if (delta_enc > config_.cpr/2) {
+                delta_enc -= config_.cpr;
+            }
+        }break;
+
         default: {
             set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
             return false;
