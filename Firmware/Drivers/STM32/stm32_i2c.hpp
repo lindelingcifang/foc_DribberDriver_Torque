@@ -12,7 +12,7 @@ public:
 
     struct I2cTask {
         uint8_t dev_addr;
-        uint8_t* reg_addrs;
+        uint8_t reg_addr;
         const uint8_t* tx_buf;
         uint8_t* rx_buf;
         size_t length;

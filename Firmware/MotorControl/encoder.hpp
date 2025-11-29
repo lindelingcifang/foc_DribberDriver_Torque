@@ -21,7 +21,7 @@ public:
         {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
 
     struct Config_t {
-        Mode mode = MODE_HALL;
+        Mode mode = MODE_I2C_ABS_MT6701;
         float calib_range = 0.02f; // Accuracy required to pass encoder cpr check
         float calib_scan_distance = 16.0f * M_PI; // rad electrical
         float calib_scan_omega = 4.0f * M_PI; // rad/s electrical
@@ -29,6 +29,7 @@ public:
         int32_t phase_offset = 0;        // Offset between encoder count and rotor electrical phase
         float phase_offset_float = 0.0f; // Sub-count phase alignment offset
         int32_t cpr = 0x01 << 14;   // Default resolution of MT6701 encoder,
+        uint8_t mt6701_reg_addrs[2] = {0x03, 0x04}; // MT6701 position register addresses
         bool pre_calibrated = false; // If true, this means the offset stored in
                                     // configuration is valid and does not need
                                     // be determined by run_offset_calibration.

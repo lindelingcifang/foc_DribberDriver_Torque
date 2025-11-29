@@ -11,6 +11,8 @@ Encoder::Encoder(TIM_HandleTypeDef* timer,
         uart_(uart)
 {
 }
+
+// I2C Absolute Encoder constructor
 Encoder::Encoder(Stm32I2c* i2c, Stm32Uart* uart) :
         i2c_(i2c),
         uart_(uart)
@@ -459,10 +461,10 @@ bool Encoder::abs_uart_start_transaction() {
 
 bool Encoder::abs_i2c_start_transaction() {
     if ((mode_ & MODE_FLAG_ABS) && (mode_ & MODE_FLAG_I2C)){
-        if (Stm32I2c::acquire_task(&i2c_task_)) {
+        volatile bool ret = Stm32I2c::acquire_task(&i2c_task_);
+        if (ret) {
             i2c_task_.dev_addr = 0x06;
-            i2c_task_.reg_addrs[0] = 0x03;
-            i2c_task_.reg_addrs[1] = 0x04;
+            i2c_task_.reg_addr = config_.mt6701_reg_addrs[0];
             i2c_task_.tx_buf = nullptr;
             i2c_task_.rx_buf = abs_i2c_dma_rx_;
             i2c_task_.length = 2;

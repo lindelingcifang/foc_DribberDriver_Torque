@@ -18,14 +18,14 @@ bool Stm32I2c::start() {
 
     HAL_StatusTypeDef status = HAL_ERROR;
 
-    if (task.reg_addrs) {
+    if (task.reg_addr) {
         if (task.tx_buf && task.rx_buf) {
-            status = HAL_I2C_Mem_Write_DMA(hi2c_, task.dev_addr << 1, *task.reg_addrs, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.tx_buf, task.length);
-            status = HAL_I2C_Mem_Read_DMA(hi2c_, task.dev_addr << 1, *task.reg_addrs, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.rx_buf, task.length);
+            status = HAL_I2C_Mem_Write_DMA(hi2c_, task.dev_addr << 1, task.reg_addr, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.tx_buf, task.length);
+            status = HAL_I2C_Mem_Read_DMA(hi2c_, task.dev_addr << 1, task.reg_addr, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.rx_buf, task.length);
         } else if (task.tx_buf) {
-            status = HAL_I2C_Mem_Write_DMA(hi2c_, task.dev_addr << 1, *task.reg_addrs, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.tx_buf, task.length);
+            status = HAL_I2C_Mem_Write_DMA(hi2c_, task.dev_addr << 1, task.reg_addr, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.tx_buf, task.length);
         } else if (task.rx_buf) {
-            status = HAL_I2C_Mem_Read_DMA(hi2c_, task.dev_addr << 1, *task.reg_addrs, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.rx_buf, task.length);
+            status = HAL_I2C_Mem_Read_DMA(hi2c_, task.dev_addr << 1, task.reg_addr, I2C_MEMADD_SIZE_8BIT, (uint8_t*)task.rx_buf, task.length);
         }
     } else {
         if (task.tx_buf && task.rx_buf) {

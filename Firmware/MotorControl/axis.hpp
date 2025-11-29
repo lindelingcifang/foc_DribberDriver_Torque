@@ -41,6 +41,7 @@ public:
         TaskTimer dc_calib;
         TaskTimer current_sense;
         TaskTimer pwm_update;
+        TaskTimer i2c_encoder_update;
     };
 
     static LockinConfig_t default_calibration();
