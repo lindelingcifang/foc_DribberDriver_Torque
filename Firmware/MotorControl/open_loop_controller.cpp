@@ -11,7 +11,7 @@ void OpenLoopController::update(uint32_t timestamp) {
     (void)prev_Iq; // unused
     (void)prev_Vq; // unused
 
-    float dt = (float)(timestamp - timestamp_) / (float)HRTIM_APB2_CLOCK_HZ;
+    float dt = (float)(timestamp - timestamp_) / (float)TIM_1_8_CLOCK_HZ;
     
     Idq_setpoint_ = {
         std::clamp(target_current_, prev_Id - max_current_ramp_ * dt, prev_Id + max_current_ramp_ * dt),

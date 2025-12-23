@@ -129,7 +129,7 @@ struct InductanceMeasurementControlLaw : AlphaBetaFrameController {
     float get_inductance() {
         // Note: A more correct formula would also take into account that there is a finite timestep.
         // However, the discretisation in the current control loop inverts the same discrepancy
-        float dt = (float)(last_input_timestamp_ - start_timestamp_) / (float)HRTIM_APB2_CLOCK_HZ; // at 216MHz this overflows after 19 seconds
+        float dt = (float)(last_input_timestamp_ - start_timestamp_) / (float)TIM_1_8_CLOCK_HZ; // at 216MHz this overflows after 19 seconds
         return std::abs(test_voltage_) / (deltaI_ / dt);
     }
 
@@ -148,7 +148,7 @@ struct InductanceMeasurementControlLaw : AlphaBetaFrameController {
 };
 
 
-Motor::Motor(HRTIM_HandleTypeDef* timer,
+Motor::Motor(TIM_HandleTypeDef* timer,
              uint8_t current_sensor_mask,
              float shunt_conductance) :
         timer_(timer),
@@ -219,19 +219,19 @@ void Motor::apply_pwm_timings(uint16_t timings[3], bool tentative) {
             disarm_with_error(ERROR_BRAKE_RESISTOR_DISARMED);
         }
 
-        HRTIM_HandleTypeDef* hhrtim = timer_;
-        HRTIM_TypeDef* hrtim = hhrtim->Instance;
-        hrtim->sTimerxRegs[0].CMP1xR = timings[0];
-        hrtim->sTimerxRegs[1].CMP1xR = timings[1];
-        hrtim->sTimerxRegs[2].CMP1xR = timings[2];
+        TIM_HandleTypeDef* htim = timer_;
+        TIM_TypeDef* tim = htim->Instance;
+        tim->CCR1 = timings[0];
+        tim->CCR2 = timings[1];
+        tim->CCR3 = timings[2];
         
-        // if (!tentative) {
-        //     if (is_armed_) {
-        //         // Set the Automatic Output Enable so that the Master Output Enable
-        //         // bit will be automatically enabled on the next update event.
-        //         hrtim->sTimerxRegs[0].OUTxR |= TIM_BDTR_AOE;
-        //     }
-        // }
+        if (!tentative) {
+            if (is_armed_) {
+                // Set the Automatic Output Enable so that the Master Output Enable
+                // bit will be automatically enabled on the next update event.
+                tim->BDTR |= TIM_BDTR_AOE;
+            }
+        }
         
         // If a timer update event occurred just now while we were updating the
         // timings, we can't be sure what values the shadow registers now contain,
@@ -258,11 +258,9 @@ bool Motor::disarm(bool* p_was_armed) {
         was_armed = is_armed_;
         is_armed_ = false;
         armed_state_ = 0;
-        HRTIM_HandleTypeDef* timer = timer_;
-        HAL_HRTIM_WaveformOutputStop(timer, HRTIM_OUTPUT_TA1 | HRTIM_OUTPUT_TA2 | 
-            HRTIM_OUTPUT_TB1 | HRTIM_OUTPUT_TB2 |
-            HRTIM_OUTPUT_TC1 | HRTIM_OUTPUT_TC2);
-        // __HAL_HRTIM_DISABLE(timer, HRTIM_TIMERID_TIMER_A | HRTIM_TIMERID_TIMER_B | HRTIM_TIMERID_TIMER_C);
+        TIM_HandleTypeDef* timer = timer_;
+        timer->Instance->BDTR &= ~TIM_BDTR_AOE; // prevent the PWMs from automatically enabling at the next update
+        __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(timer);
         control_law_ = nullptr;
     }
 
@@ -604,7 +602,7 @@ void Motor::current_meas_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current
  * @brief Called when the underlying hardware timer triggers an update event.
  */
 void Motor::dc_calib_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current) {
-    const float dc_calib_period = static_cast<float>(2 * HRTIM_APB2_CLOCK_HZ * (HRTIM_REP + 1)) / HRTIM_APB2_CLOCK_HZ;
+    const float dc_calib_period = static_cast<float>(2 * TIM_1_8_PERIOD_CLOCKS * (TIM_1_8_RCR + 1)) / TIM_1_8_CLOCK_HZ;
     TaskTimerContext tmr{axis_->task_times_.dc_calib};
 
     if (current.has_value()) {
@@ -638,13 +636,13 @@ void Motor::pwm_update_cb(uint32_t output_timestamp) {
     // Apply control law to calculate PWM duty cycles
     if (is_armed_ && control_law_status == ERROR_NONE) {
         uint16_t next_timings[] = {
-            (uint16_t)(pwm_timings[0] * (float)HRTIM_PERIOD_CLOCKS),
-            (uint16_t)(pwm_timings[1] * (float)HRTIM_PERIOD_CLOCKS),
-            (uint16_t)(pwm_timings[2] * (float)HRTIM_PERIOD_CLOCKS)
+            (uint16_t)(pwm_timings[0] * (float)TIM_1_8_PERIOD_CLOCKS),
+            (uint16_t)(pwm_timings[1] * (float)TIM_1_8_PERIOD_CLOCKS),
+            (uint16_t)(pwm_timings[2] * (float)TIM_1_8_PERIOD_CLOCKS)
         };
         apply_pwm_timings(next_timings, false);
     } else if (is_armed_) {
-        if (!(HAL_HRTIM_GetState(timer_) & HAL_HRTIM_STATE_READY) && (control_law_status == ERROR_CONTROLLER_INITIALIZING)) {
+        if (!(timer_->Instance->BDTR & TIM_BDTR_MOE) && (control_law_status == ERROR_CONTROLLER_INITIALIZING)) {
             // If the PWM output is armed in software but not yet in
             // hardware we tolerate the "initializing" error.
             i_bus = 0.0f;

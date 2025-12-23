@@ -3,7 +3,6 @@
 #include "zfoc_main.h"
 #include "nvm_config.hpp"
 
-#include "usart.h"
 #include "freertos_vars.h"
 #include "interface_can.hpp"
 
@@ -133,8 +132,11 @@ void Zfoc::clear_errors() {
         axis.error_ = Axis::ERROR_NONE;
         axis.motor_.error_ = Motor::ERROR_NONE;
         axis.encoder_.error_ = Encoder::ERROR_NONE;
-        axis.encoder_.uart_error_rate_ = 0.0f;
+        axis.encoder_.spi_error_rate_ = 0.0f;
         axis.controller_.error_ = Controller::ERROR_NONE;
+    }
+    if (zfoc.config_.enable_brake_resistor) {
+        safety_critical_arm_brake_resistor();
     }
 }
 
@@ -145,6 +147,7 @@ void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskN
     for(auto& axis: axes){
         axis.motor_.disarm();
     }
+    safety_critical_disarm_brake_resistor();
     for (;;); // TODO: safe action
 }
 
@@ -201,6 +204,7 @@ void Zfoc::disarm_with_error(Error error) {
         for (auto& axis: axes) {
             axis.motor_.disarm_with_error(Motor::ERROR_SYSTEM_LEVEL);
         }
+        safety_critical_disarm_brake_resistor();
         error_ |= error;
     }
 }
@@ -373,24 +377,10 @@ static void rtos_main(const void*) {
         axis.encoder_.setup();
     }
 
-    volatile uint32_t output_state = HAL_HRTIM_WaveformGetOutputState(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
-    volatile uint32_t hrtim_mcr = hhrtim1.Instance->sMasterRegs.MCR;
-    volatile uint32_t timerA_cnt = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
-    volatile uint32_t timerA_isr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].TIMxISR;
-    volatile uint32_t timerA_cpt1xr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CPT1xR;
-
     // Start PWM and enable adc interrupts/callbacks
     start_adc_pwm();
 
-    volatile HAL_TIM_StateTypeDef tim_state = HAL_TIM_Base_GetState(&htim1);
-    output_state = HAL_HRTIM_WaveformGetOutputState(&hhrtim1, HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1);
-    hrtim_mcr = hhrtim1.Instance->sMasterRegs.MCR;
-    timerA_cnt = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
-    timerA_isr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].TIMxISR;
-    timerA_cpt1xr = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CPT1xR;
-
     osDelay(10);
-    timerA_cnt = hhrtim1.Instance->sTimerxRegs[HRTIM_TIMERINDEX_TIMER_A].CNTxR;
 
     // Wait for up to 2s for motor to become ready to allow for error-free
     // startup. This delay gives the current sensor calibration time to

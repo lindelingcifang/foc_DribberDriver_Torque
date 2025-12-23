@@ -12,7 +12,6 @@
 #include <gpio.h>
 #include <main.h>
 #include <tim.h>
-#include <hrtim.h>
 #include <utils.hpp>
 
 #include "zfoc_main.h"
@@ -79,6 +78,47 @@ osThreadId analog_thread = 0;
 
 /* Function implementations --------------------------------------------------*/
 
+// @brief Arms the brake resistor
+void safety_critical_arm_brake_resistor() {
+    CRITICAL_SECTION() {
+        for (size_t i = 0; i < AXIS_COUNT; ++i) {
+            axes[i].motor_.I_bus_ = 0.0f;
+        }
+        brake_resistor_armed = true;
+        htim2.Instance->CCR4 = 0;
+    }
+}
+
+// @brief Disarms the brake resistor and by extension
+// all motor PWM outputs.
+// After calling this, the brake resistor can only be armed again
+// by calling safety_critical_arm_brake_resistor().
+void safety_critical_disarm_brake_resistor() {
+    bool brake_resistor_was_armed = brake_resistor_armed;
+
+    CRITICAL_SECTION() {
+        brake_resistor_armed = false;
+        htim2.Instance->CCR4 = 0;
+    }
+
+    // Check necessary to prevent infinite recursion
+    if (brake_resistor_was_armed) {
+        for (auto& axis: axes) {
+            axis.motor_.disarm();
+        }
+    }
+}
+
+// @brief Updates the brake resistor PWM timings unless
+// the brake resistor is disarmed.
+void safety_critical_apply_brake_resistor_timings(uint32_t high_on) {
+    CRITICAL_SECTION() {
+        if (brake_resistor_armed) {
+            htim2.Instance->CCR4 = high_on;
+        }
+    }
+}
+
 void start_adc_pwm() {
     // Disarm motors
     for (auto& axis: axes) {
@@ -87,23 +127,38 @@ void start_adc_pwm() {
 
     for (Motor& motor: motors) {
         // Init PWM
-        int half_load = HRTIM_PERIOD_CLOCKS / 2;
-        motor.timer_->Instance->sTimerxRegs[0].CMP1xR = half_load;
-        motor.timer_->Instance->sTimerxRegs[1].CMP1xR = half_load;
-        motor.timer_->Instance->sTimerxRegs[2].CMP1xR = half_load;
+        int half_load = TIM_1_8_PERIOD_CLOCKS / 2;
+        motor.timer_->Instance->CCR1 = half_load;
+        motor.timer_->Instance->CCR2 = half_load;
+        motor.timer_->Instance->CCR3 = half_load;
 
         // Enable PWM outputs (they are still masked by MOE though)
-
+        motor.timer_->Instance->CCER |= (TIM_CCx_ENABLE << TIM_CHANNEL_1);
+        motor.timer_->Instance->CCER |= (TIM_CCxN_ENABLE << TIM_CHANNEL_1);
+        motor.timer_->Instance->CCER |= (TIM_CCx_ENABLE << TIM_CHANNEL_2);
+        motor.timer_->Instance->CCER |= (TIM_CCxN_ENABLE << TIM_CHANNEL_2);
+        motor.timer_->Instance->CCER |= (TIM_CCx_ENABLE << TIM_CHANNEL_3);
+        motor.timer_->Instance->CCER |= (TIM_CCxN_ENABLE << TIM_CHANNEL_3);
     }
 
     // Enable ADC and interrupts
     ADC1->CR |= ADC_CR_ADEN;
+    ADC2->CR |= ADC_CR_ADEN;
+    ADC3->CR |= ADC_CR_ADEN;
 
     // Warp field stabilize.
     osDelay(2);
 
 
     start_timers();
+
+    // Start brake resistor PWM in floating output configuration
+    htim2.Instance->CCR4 = 0;
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+
+    if (zfoc.config_.enable_brake_resistor) {
+        safety_critical_arm_brake_resistor();
+    }
 }
 
 // @brief [DEPRICATED] ADC1 measurements are written to this buffer by DMA
@@ -304,4 +359,7 @@ void update_brake_current() {
         zfoc.disarm_with_error(Zfoc::ERROR_DC_BUS_OVER_REGEN_CURRENT);
         return;
     }
+
+    int on = (int)(TIM_2_PERIOD_CLOCKS * brake_duty);
+    safety_critical_apply_brake_resistor_timings(on);
 }

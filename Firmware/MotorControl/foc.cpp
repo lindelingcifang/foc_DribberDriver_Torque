@@ -97,7 +97,7 @@ ZfocIntf::MotorIntf::Error FieldOrientedController::get_alpha_beta_output(
     // Park transform
     if (Ialpha_beta_measured_.has_value()) {
         auto [Ialpha, Ibeta] = *Ialpha_beta_measured_;
-        float I_phase = phase + phase_vel * ((float)(int32_t)(i_timestamp_ - ctrl_timestamp_) / (float)HRTIM_APB2_CLOCK_HZ);
+        float I_phase = phase + phase_vel * ((float)(int32_t)(i_timestamp_ - ctrl_timestamp_) / (float)TIM_1_8_CLOCK_HZ);
         float c_I = 0;
         float s_I = 0;
         cordic_cos_sin(I_phase, &c_I, &s_I);
@@ -161,7 +161,7 @@ ZfocIntf::MotorIntf::Error FieldOrientedController::get_alpha_beta_output(
     }
 
     // Inverse park transform
-    float pwm_phase = phase + phase_vel * ((float)(int32_t)(output_timestamp - ctrl_timestamp_) / (float)HRTIM_APB2_CLOCK_HZ);
+    float pwm_phase = phase + phase_vel * ((float)(int32_t)(output_timestamp - ctrl_timestamp_) / (float)TIM_1_8_CLOCK_HZ);
     float c_p = 0;
     float s_p = 0;
     cordic_cos_sin(pwm_phase, &c_p, &s_p);

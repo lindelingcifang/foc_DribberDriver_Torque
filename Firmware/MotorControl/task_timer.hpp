@@ -11,8 +11,8 @@
 #define MEASURE_MAX_LENGTH
 
 inline uint16_t sample_HRTIM_TIMD() {
-    constexpr uint16_t clocks_per_cnt = (uint16_t)((float)HRTIM_PRESCALER);
-    return clocks_per_cnt * HRTIM1_TIMD->CNTxR;  // TODO: Use a hw_config
+    constexpr uint16_t clocks_per_cnt = (uint16_t)1;
+    return clocks_per_cnt * TIM16->CNT;  // TODO: Use a hw_config
 }
 
 struct TaskTimer {

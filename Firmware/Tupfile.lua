@@ -73,8 +73,7 @@ zfoc_firmware_pkg = {
         'Drivers/STM32/stm32_system.cpp',
         'Drivers/STM32/stm32_gpio.cpp',
         'Drivers/STM32/stm32_nvm.c',
-        'Drivers/STM32/stm32_uart.cpp',
-        'Drivers/STM32/stm32_i2c.cpp',
+        'Drivers/STM32/stm32_spi_arbiter.cpp',
         'Drivers/STM32/cordic_cos_sin.cpp',
         'communication/communication.cpp',
         'communication/can/can_simple.cpp',
@@ -104,17 +103,13 @@ stm32g4xx_hal_pkg = {
         'Src/stm32g4xx_hal_flash.c',
         'Src/stm32g4xx_hal_fmac.c',
         'Src/stm32g4xx_hal_gpio.c',
-        'Src/stm32g4xx_hal_hrtim.c',
         'Src/stm32g4xx_hal_pwr_ex.c',
         'Src/stm32g4xx_hal_pwr.c',
         'Src/stm32g4xx_hal_rcc_ex.c',
         'Src/stm32g4xx_hal_rcc.c',
         'Src/stm32g4xx_hal_tim_ex.c',
         'Src/stm32g4xx_hal_tim.c',
-        'Src/stm32g4xx_hal_uart_ex.c',
-        'Src/stm32g4xx_hal_uart.c',
-        'Src/stm32g4xx_hal_i2c_ex.c',
-        'Src/stm32g4xx_hal_i2c.c',
+        'Src/stm32g4xx_hal_spi.c',
         'Src/stm32g4xx_hal.c',
         'Src/stm32g4xx_ll_adc.c'
     },
@@ -194,8 +189,47 @@ board_v1 = {
     }
 }
 
+board_v2 = {
+    root = 'Board/v2/Core',
+    include = {stm32g4xx_hal_pkg},
+    include_dirs = {
+        'Inc',
+        '../../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F',
+        '..',
+    },
+    code_files = {
+        '../startup_stm32g474xx.s',
+        '../../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c',
+        '../board.cpp',
+        'Src/adc.c',
+        'Src/app_freertos.c',
+        'Src/cordic.c',
+        'Src/crc.c',
+        'Src/fdcan.c',
+        'Src/gpio.c',
+        'Src/main.c',
+        'Src/stm32g4xx_hal_msp.c',
+        'Src/stm32g4xx_hal_timebase_tim.c',
+        'Src/stm32g4xx_it.c',
+        'Src/syscalls.c',
+        'Src/sysmem.c',
+        'Src/system_stm32g4xx.c',
+        'Src/tim.c',
+        'Src/spi.c',
+        'Src/dma.c',
+    },
+    cflags = {
+        '-DSTM32G474xx',
+        '-DHW_VERSION_MAJOR=2',
+    },
+    ldflags = {
+        '-TBoard/v2/Corrected_STM32G474CETx_FLASH.ld',
+    }
+}
+
 boards = {
     ["v1.1"] = {include={board_v1}, cflags={"-DHW_VERSION_MINOR=1 -DHW_VERSION_VOLTAGE=24"}},
+    ["v2.0"] = {include={board_v2}, cflags={"-DHW_VERSION_MINOR=0 -DHW_VERSION_VOLTAGE=24"}},
 }
 
 -- Toolchain setup -------------------------------------------------------------

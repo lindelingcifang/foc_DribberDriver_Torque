@@ -55,17 +55,11 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc2;
+extern FDCAN_HandleTypeDef hfdcan1;
 extern FDCAN_HandleTypeDef hfdcan2;
-extern HRTIM_HandleTypeDef hhrtim1;
-extern DMA_HandleTypeDef hdma_i2c1_rx;
-extern DMA_HandleTypeDef hdma_i2c1_tx;
-extern I2C_HandleTypeDef hi2c1;
+extern DMA_HandleTypeDef hdma_spi1_rx;
+extern DMA_HandleTypeDef hdma_spi1_tx;
 extern TIM_HandleTypeDef htim1;
-extern DMA_HandleTypeDef hdma_usart2_rx;
-extern DMA_HandleTypeDef hdma_usart2_tx;
-extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim17;
 
 /* USER CODE BEGIN EV */
@@ -179,7 +173,7 @@ void DMA1_Channel1_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
 
   /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_i2c1_rx);
+  HAL_DMA_IRQHandler(&hdma_spi1_rx);
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
 
   /* USER CODE END DMA1_Channel1_IRQn 1 */
@@ -193,53 +187,38 @@ void DMA1_Channel2_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel2_IRQn 0 */
 
   /* USER CODE END DMA1_Channel2_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_i2c1_tx);
+  HAL_DMA_IRQHandler(&hdma_spi1_tx);
   /* USER CODE BEGIN DMA1_Channel2_IRQn 1 */
 
   /* USER CODE END DMA1_Channel2_IRQn 1 */
 }
 
 /**
-  * @brief This function handles DMA1 channel3 global interrupt.
+  * @brief This function handles FDCAN1 interrupt 0.
   */
-void DMA1_Channel3_IRQHandler(void)
+void FDCAN1_IT0_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Channel3_IRQn 0 */
+  /* USER CODE BEGIN FDCAN1_IT0_IRQn 0 */
 
-  /* USER CODE END DMA1_Channel3_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
-  /* USER CODE BEGIN DMA1_Channel3_IRQn 1 */
+  /* USER CODE END FDCAN1_IT0_IRQn 0 */
+  HAL_FDCAN_IRQHandler(&hfdcan1);
+  /* USER CODE BEGIN FDCAN1_IT0_IRQn 1 */
 
-  /* USER CODE END DMA1_Channel3_IRQn 1 */
+  /* USER CODE END FDCAN1_IT0_IRQn 1 */
 }
 
 /**
-  * @brief This function handles DMA1 channel4 global interrupt.
+  * @brief This function handles FDCAN1 interrupt 1.
   */
-void DMA1_Channel4_IRQHandler(void)
+void FDCAN1_IT1_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
+  /* USER CODE BEGIN FDCAN1_IT1_IRQn 0 */
 
-  /* USER CODE END DMA1_Channel4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_tx);
-  /* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
+  /* USER CODE END FDCAN1_IT1_IRQn 0 */
+  HAL_FDCAN_IRQHandler(&hfdcan1);
+  /* USER CODE BEGIN FDCAN1_IT1_IRQn 1 */
 
-  /* USER CODE END DMA1_Channel4_IRQn 1 */
-}
-
-/**
-  * @brief This function handles ADC1 and ADC2 global interrupt.
-  */
-void ADC1_2_IRQHandler(void)
-{
-  /* USER CODE BEGIN ADC1_2_IRQn 0 */
-
-  /* USER CODE END ADC1_2_IRQn 0 */
-  HAL_ADC_IRQHandler(&hadc1);
-  HAL_ADC_IRQHandler(&hadc2);
-  /* USER CODE BEGIN ADC1_2_IRQn 1 */
-
-  /* USER CODE END ADC1_2_IRQn 1 */
+  /* USER CODE END FDCAN1_IT1_IRQn 1 */
 }
 
 /**
@@ -261,48 +240,6 @@ void TIM1_TRG_COM_TIM17_IRQHandler(void)
   /* USER CODE BEGIN TIM1_TRG_COM_TIM17_IRQn 1 */
 
   /* USER CODE END TIM1_TRG_COM_TIM17_IRQn 1 */
-}
-
-/**
-  * @brief This function handles I2C1 event interrupt / I2C1 wake-up interrupt through EXTI line 23.
-  */
-void I2C1_EV_IRQHandler(void)
-{
-  /* USER CODE BEGIN I2C1_EV_IRQn 0 */
-
-  /* USER CODE END I2C1_EV_IRQn 0 */
-  HAL_I2C_EV_IRQHandler(&hi2c1);
-  /* USER CODE BEGIN I2C1_EV_IRQn 1 */
-
-  /* USER CODE END I2C1_EV_IRQn 1 */
-}
-
-/**
-  * @brief This function handles USART2 global interrupt / USART2 wake-up interrupt through EXTI line 26.
-  */
-void USART2_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART2_IRQn 0 */
-
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-
-  /* USER CODE END USART2_IRQn 1 */
-}
-
-/**
-  * @brief This function handles HRTIM timer D global interrupt.
-  */
-void HRTIM1_TIMD_IRQHandler(void)
-{
-  /* USER CODE BEGIN HRTIM1_TIMD_IRQn 0 */
-
-  /* USER CODE END HRTIM1_TIMD_IRQn 0 */
-  HAL_HRTIM_IRQHandler(&hhrtim1,HRTIM_TIMERINDEX_TIMER_D);
-  /* USER CODE BEGIN HRTIM1_TIMD_IRQn 1 */
-
-  /* USER CODE END HRTIM1_TIMD_IRQn 1 */
 }
 
 /**

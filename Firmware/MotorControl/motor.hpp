@@ -55,7 +55,7 @@ public:
         void set_current_control_bandwidth(float value) { current_control_bandwidth = value; parent->update_current_controller_gains(); }
     };
 
-    Motor(HRTIM_HandleTypeDef* timer,
+    Motor(TIM_HandleTypeDef* timer,
          uint8_t current_sensor_mask,
          float shunt_conductance);
 
@@ -82,7 +82,7 @@ public:
     void pwm_update_cb(uint32_t output_timestamp);
 
     // hardware config
-    HRTIM_HandleTypeDef* const timer_;
+    TIM_HandleTypeDef* const timer_;
     const uint8_t current_sensor_mask_;
     const float shunt_conductance_;
 

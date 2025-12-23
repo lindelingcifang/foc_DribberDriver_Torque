@@ -57,11 +57,13 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define HRTIM_PERIOD_CLOCKS 6800
-#define HRTIM_DEADTIME_CLOCKS 80
-#define HRTIM_PRESCALER 4
-#define HRTIM_REP 2
-#define HRTIM_APB2_CLOCK_HZ 170000000
+#define TIM_1_8_PERIOD_CLOCKS 6800
+#define TIM_APB1_CLOCK_HZ 170000000
+#define TIM_1_8_RCR 2
+#define TIM_1_8_DEADTIME_CLOCKS 40
+#define TIM_1_8_CLOCK_HZ 170000000
+#define TIM_APB2_CLOCK_HZ 170000000
+#define TIM_2_PERIOD_CLOCKS 4096
 
 /* USER CODE BEGIN Private defines */
 

@@ -73,5 +73,9 @@
         "numbers": "cpp",
         "span": "cpp"
     },
-    "cmake.sourceDirectory": "/home/lxl/zfoc/g474_test/g474_test",
+    "C_Cpp.files.exclude": {
+        "**/Firmware/build/**": true,
+        "**/Firmware/Board/v1/**": true,
+        "**/Firmware/Board/v2/Drivers/**": true,
+    },
 }

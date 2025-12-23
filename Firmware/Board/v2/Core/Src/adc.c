@@ -27,7 +27,6 @@
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 ADC_HandleTypeDef hadc3;
-ADC_HandleTypeDef hadc4;
 
 /* ADC1 init function */
 void MX_ADC1_Init(void)
@@ -39,6 +38,7 @@ void MX_ADC1_Init(void)
 
   ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_InjectionConfTypeDef sConfigInjected = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
 
@@ -57,8 +57,8 @@ void MX_ADC1_Init(void)
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_HRTIM_TRG1;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
   hadc1.Init.OversamplingMode = DISABLE;
@@ -77,13 +77,33 @@ void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedChannel = ADC_CHANNEL_3;
+  sConfigInjected.InjectedRank = ADC_INJECTED_RANK_1;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfigInjected.InjectedSingleDiff = ADC_SINGLE_ENDED;
+  sConfigInjected.InjectedOffsetNumber = ADC_OFFSET_NONE;
+  sConfigInjected.InjectedOffset = 0;
+  sConfigInjected.InjectedNbrOfConversion = 1;
+  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
+  sConfigInjected.AutoInjectedConv = DISABLE;
+  sConfigInjected.QueueInjectedContext = DISABLE;
+  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJEC_T1_TRGO;
+  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONV_EDGE_RISING;
+  sConfigInjected.InjecOversamplingMode = DISABLE;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc1, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
   }
@@ -101,6 +121,7 @@ void MX_ADC2_Init(void)
   /* USER CODE END ADC2_Init 0 */
 
   ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_InjectionConfTypeDef sConfigInjected = {0};
 
   /* USER CODE BEGIN ADC2_Init 1 */
 
@@ -119,7 +140,7 @@ void MX_ADC2_Init(void)
   hadc2.Init.ContinuousConvMode = DISABLE;
   hadc2.Init.NbrOfConversion = 1;
   hadc2.Init.DiscontinuousConvMode = DISABLE;
-  hadc2.Init.ExternalTrigConv = ADC_EXTERNALTRIG_HRTIM_TRG1;
+  hadc2.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T1_TRGO;
   hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc2.Init.DMAContinuousRequests = DISABLE;
   hadc2.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
@@ -131,13 +152,33 @@ void MX_ADC2_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedChannel = ADC_CHANNEL_1;
+  sConfigInjected.InjectedRank = ADC_INJECTED_RANK_1;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfigInjected.InjectedSingleDiff = ADC_SINGLE_ENDED;
+  sConfigInjected.InjectedOffsetNumber = ADC_OFFSET_NONE;
+  sConfigInjected.InjectedOffset = 0;
+  sConfigInjected.InjectedNbrOfConversion = 1;
+  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
+  sConfigInjected.AutoInjectedConv = DISABLE;
+  sConfigInjected.QueueInjectedContext = DISABLE;
+  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJEC_T1_TRGO;
+  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONV_EDGE_RISING;
+  sConfigInjected.InjecOversamplingMode = DISABLE;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc2, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
   }
@@ -156,6 +197,7 @@ void MX_ADC3_Init(void)
 
   ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_InjectionConfTypeDef sConfigInjected = {0};
 
   /* USER CODE BEGIN ADC3_Init 1 */
 
@@ -174,7 +216,7 @@ void MX_ADC3_Init(void)
   hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.NbrOfConversion = 1;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
-  hadc3.Init.ExternalTrigConv = ADC_EXTERNALTRIG_HRTIM_TRG1;
+  hadc3.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T8_TRGO;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc3.Init.DMAContinuousRequests = DISABLE;
   hadc3.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
@@ -194,13 +236,33 @@ void MX_ADC3_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Injected Channel
+  */
+  sConfigInjected.InjectedChannel = ADC_CHANNEL_12;
+  sConfigInjected.InjectedRank = ADC_INJECTED_RANK_1;
+  sConfigInjected.InjectedSamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfigInjected.InjectedSingleDiff = ADC_SINGLE_ENDED;
+  sConfigInjected.InjectedOffsetNumber = ADC_OFFSET_NONE;
+  sConfigInjected.InjectedOffset = 0;
+  sConfigInjected.InjectedNbrOfConversion = 1;
+  sConfigInjected.InjectedDiscontinuousConvMode = DISABLE;
+  sConfigInjected.AutoInjectedConv = DISABLE;
+  sConfigInjected.QueueInjectedContext = DISABLE;
+  sConfigInjected.ExternalTrigInjecConv = ADC_EXTERNALTRIGINJEC_T1_TRGO;
+  sConfigInjected.ExternalTrigInjecConvEdge = ADC_EXTERNALTRIGINJECCONV_EDGE_RISING;
+  sConfigInjected.InjecOversamplingMode = DISABLE;
+  if (HAL_ADCEx_InjectedConfigChannel(&hadc3, &sConfigInjected) != HAL_OK)
   {
     Error_Handler();
   }
@@ -209,63 +271,8 @@ void MX_ADC3_Init(void)
   /* USER CODE END ADC3_Init 2 */
 
 }
-/* ADC4 init function */
-void MX_ADC4_Init(void)
-{
-
-  /* USER CODE BEGIN ADC4_Init 0 */
-
-  /* USER CODE END ADC4_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC4_Init 1 */
-
-  /* USER CODE END ADC4_Init 1 */
-
-  /** Common config
-  */
-  hadc4.Instance = ADC4;
-  hadc4.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc4.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc4.Init.GainCompensation = 0;
-  hadc4.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc4.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadc4.Init.LowPowerAutoWait = DISABLE;
-  hadc4.Init.ContinuousConvMode = DISABLE;
-  hadc4.Init.NbrOfConversion = 1;
-  hadc4.Init.DiscontinuousConvMode = DISABLE;
-  hadc4.Init.ExternalTrigConv = ADC_EXTERNALTRIG_HRTIM_TRG1;
-  hadc4.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc4.Init.DMAContinuousRequests = DISABLE;
-  hadc4.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
-  hadc4.Init.OversamplingMode = DISABLE;
-  if (HAL_ADC_Init(&hadc4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_4;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(&hadc4, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC4_Init 2 */
-
-  /* USER CODE END ADC4_Init 2 */
-
-}
 
 static uint32_t HAL_RCC_ADC12_CLK_ENABLED=0;
-static uint32_t HAL_RCC_ADC345_CLK_ENABLED=0;
 
 void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 {
@@ -293,18 +300,15 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
 
-    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration
-    PB1     ------> ADC1_IN12
+    PA2     ------> ADC1_IN3
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Pin = GPIO_PIN_2;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* ADC1 interrupt Init */
-    HAL_NVIC_SetPriority(ADC1_2_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
   /* USER CODE END ADC1_MspInit 1 */
@@ -333,15 +337,13 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC2 GPIO Configuration
     PA0     ------> ADC2_IN1
+    PA1     ------> ADC2_IN2
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* ADC2 interrupt Init */
-    HAL_NVIC_SetPriority(ADC1_2_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
   /* USER CODE END ADC2_MspInit 1 */
@@ -362,16 +364,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     }
 
     /* ADC3 clock enable */
-    HAL_RCC_ADC345_CLK_ENABLED++;
-    if(HAL_RCC_ADC345_CLK_ENABLED==1){
-      __HAL_RCC_ADC345_CLK_ENABLE();
-    }
+    __HAL_RCC_ADC345_CLK_ENABLE();
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC3 GPIO Configuration
     PB0     ------> ADC3_IN12
+    PB1     ------> ADC3_IN1
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -379,40 +379,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
   /* USER CODE BEGIN ADC3_MspInit 1 */
 
   /* USER CODE END ADC3_MspInit 1 */
-  }
-  else if(adcHandle->Instance==ADC4)
-  {
-  /* USER CODE BEGIN ADC4_MspInit 0 */
-
-  /* USER CODE END ADC4_MspInit 0 */
-
-  /** Initializes the peripherals clocks
-  */
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC345;
-    PeriphClkInit.Adc345ClockSelection = RCC_ADC345CLKSOURCE_SYSCLK;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    /* ADC4 clock enable */
-    HAL_RCC_ADC345_CLK_ENABLED++;
-    if(HAL_RCC_ADC345_CLK_ENABLED==1){
-      __HAL_RCC_ADC345_CLK_ENABLE();
-    }
-
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**ADC4 GPIO Configuration
-    PB14     ------> ADC4_IN4
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_14;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN ADC4_MspInit 1 */
-
-  /* USER CODE END ADC4_MspInit 1 */
   }
 }
 
@@ -431,18 +397,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     }
 
     /**ADC1 GPIO Configuration
-    PB1     ------> ADC1_IN12
+    PA2     ------> ADC1_IN3
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_1);
-
-    /* ADC1 interrupt Deinit */
-  /* USER CODE BEGIN ADC1:ADC1_2_IRQn disable */
-    /**
-    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
-    /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
-  /* USER CODE END ADC1:ADC1_2_IRQn disable */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2);
 
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
@@ -461,17 +418,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
     /**ADC2 GPIO Configuration
     PA0     ------> ADC2_IN1
+    PA1     ------> ADC2_IN2
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0);
-
-    /* ADC2 interrupt Deinit */
-  /* USER CODE BEGIN ADC2:ADC1_2_IRQn disable */
-    /**
-    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
-    /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
-  /* USER CODE END ADC2:ADC1_2_IRQn disable */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1);
 
   /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
@@ -483,39 +432,17 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
   /* USER CODE END ADC3_MspDeInit 0 */
     /* Peripheral clock disable */
-    HAL_RCC_ADC345_CLK_ENABLED--;
-    if(HAL_RCC_ADC345_CLK_ENABLED==0){
-      __HAL_RCC_ADC345_CLK_DISABLE();
-    }
+    __HAL_RCC_ADC345_CLK_DISABLE();
 
     /**ADC3 GPIO Configuration
     PB0     ------> ADC3_IN12
+    PB1     ------> ADC3_IN1
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1);
 
   /* USER CODE BEGIN ADC3_MspDeInit 1 */
 
   /* USER CODE END ADC3_MspDeInit 1 */
-  }
-  else if(adcHandle->Instance==ADC4)
-  {
-  /* USER CODE BEGIN ADC4_MspDeInit 0 */
-
-  /* USER CODE END ADC4_MspDeInit 0 */
-    /* Peripheral clock disable */
-    HAL_RCC_ADC345_CLK_ENABLED--;
-    if(HAL_RCC_ADC345_CLK_ENABLED==0){
-      __HAL_RCC_ADC345_CLK_DISABLE();
-    }
-
-    /**ADC4 GPIO Configuration
-    PB14     ------> ADC4_IN4
-    */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_14);
-
-  /* USER CODE BEGIN ADC4_MspDeInit 1 */
-
-  /* USER CODE END ADC4_MspDeInit 1 */
   }
 }
 

@@ -11,7 +11,6 @@
 #include <stm32g4xx_hal.h>
 #include <gpio.h>
 #include <tim.h>
-#include <hrtim.h>
 #include <fdcan.h>
 #include <main.h>
 #include "cmsis_os.h"
@@ -20,7 +19,7 @@
 
 #define SHUNT_RESISTANCE (8e-3f)    // [Ohm] shunt resistor value
 
-#define AXIS_COUNT (1)
+#define AXIS_COUNT (2)
 
 #define GPIO_COUNT (10)
 
@@ -43,10 +42,12 @@
 #define TIM_TIME_BASE TIM17
 
 // Run control loop at the same frequency as the current measurement
-#define CONTROL_TIMER_PERIOD_TICKS (2 * HRTIM_PERIOD_CLOCKS * (HRTIM_REP + 1))
+#define CONTROL_TIMER_PERIOD_TICKS (2 * TIM_1_8_PERIOD_CLOCKS * (TIM_1_8_RCR + 1))
+
+#define TIM1_INIT_COUNT (TIM_1_8_PERIOD_CLOCKS / 2 - 1 * 128) // TODO: explain why this offset
 
 // Maximum allowed delay between control loop update and current update before
-#define MAX_CONTROL_LOOP_UPDATE_TO_CURRENT_UPDATE_DELTA (HRTIM_PERIOD_CLOCKS / 2 + 1 * 128)
+#define MAX_CONTROL_LOOP_UPDATE_TO_CURRENT_UPDATE_DELTA (TIM_1_8_PERIOD_CLOCKS / 2 + 1 * 128)
 
 #ifdef __cplusplus
 #include <stm32_gpio.hpp>
@@ -63,16 +64,14 @@ extern Stm32Gpio gpios[GPIO_COUNT];
 struct GpioFunction { int mode = 0; uint8_t alternate_function = 0xff; };
 extern std::array<GpioFunction, 3> alternate_functions[GPIO_COUNT];
 
-extern UART_HandleTypeDef* uart;
-
 #endif
 
 // Period in [s]
-#define CURRENT_MEAS_PERIOD ( (float)2*HRTIM_PERIOD_CLOCKS*(HRTIM_REP+1) / (float)HRTIM_APB2_CLOCK_HZ )
+#define CURRENT_MEAS_PERIOD ( (float)2*TIM_1_8_PERIOD_CLOCKS*(TIM_1_8_RCR+1) / (float)TIM_1_8_CLOCK_HZ )
 static const float current_meas_period = CURRENT_MEAS_PERIOD;
 
 // Frequency in [Hz]
-#define CURRENT_MEAS_HZ ( (float)(HRTIM_APB2_CLOCK_HZ) / (float)(2*HRTIM_PERIOD_CLOCKS*(HRTIM_REP+1)) )
+#define CURRENT_MEAS_HZ ( (float)(TIM_1_8_CLOCK_HZ) / (float)(2*TIM_1_8_PERIOD_CLOCKS*(TIM_1_8_RCR+1)) )
 static const int current_meas_hz = (int)CURRENT_MEAS_HZ;
 
 #define VBUS_S_DIVIDER_RATIO 11.0f

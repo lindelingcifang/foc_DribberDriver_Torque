@@ -1,7 +1,6 @@
 #ifndef __STM32_UART_HPP
 #define __STM32_UART_HPP
 
-#include <usart.h>
 #include <stm32g474xx.h>
 #include <stm32g4xx_hal_uart.h>
 

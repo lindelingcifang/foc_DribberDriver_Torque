@@ -3,19 +3,10 @@
 #include <Drivers/STM32/stm32_system.h>
 #include <bitset>
 
-Encoder::Encoder(TIM_HandleTypeDef* timer,
-                 Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio,
-                Stm32Uart* uart) :
-        timer_(timer),
+Encoder::Encoder(Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio,
+                Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio) :
         hallA_gpio_(hallA_gpio), hallB_gpio_(hallB_gpio), hallC_gpio_(hallC_gpio),
-        uart_(uart)
-{
-}
-
-// I2C Absolute Encoder constructor
-Encoder::Encoder(Stm32I2c* i2c, Stm32Uart* uart) :
-        i2c_(i2c),
-        uart_(uart)
+        spi_arbiter_(spi_arbiter), abs_spi_cs_gpio_(abs_spi_cs_gpio)
 {
 }
 
@@ -33,12 +24,21 @@ bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
 }
 
 void Encoder::setup() {
-    if (timer_)
-        HAL_TIM_Encoder_Start(timer_, TIM_CHANNEL_ALL);
-
     mode_ = config_.mode;
 
-    uart_task_.baudrate = ENCODER_UART_BAUDRATE;
+    spi_task_.config = {
+        .Mode = SPI_MODE_MASTER,
+        .Direction = SPI_DIRECTION_2LINES,
+        .DataSize = SPI_DATASIZE_16BIT,
+        .CLKPolarity = SPI_POLARITY_HIGH,
+        .CLKPhase = SPI_PHASE_2EDGE,
+        .NSS = SPI_NSS_SOFT,
+        .BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16,
+        .FirstBit = SPI_FIRSTBIT_MSB,
+        .TIMode = SPI_TIMODE_DISABLE,
+        .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
+        .CRCPolynomial = 10,
+    };
 
     if(mode_ & MODE_FLAG_ABS){
         if (axis_->controller_.config_.anticogging.pre_calibrated) {
@@ -92,9 +92,6 @@ void Encoder::set_linear_count(int32_t count) {
     shadow_count_ = count;
     pos_estimate_counts_ = (float)count;
     tim_cnt_sample_ = count;
-
-    //Write hardware last
-    timer_->Instance->CNT = count;
 
     cpu_exit_critical(prim);
 }
@@ -406,14 +403,10 @@ void Encoder::sample_now() {
             // do nothing: samples already captured in general GPIO capture
         } break;
 
-        case MODE_UART_ABS: {
-            abs_uart_start_transaction();
+        case MODE_SPI_ABS_MT6701: {
+            abs_spi_start_transaction();
+            // Do nothing
         } break;
-
-        case MODE_I2C_ABS_MT6701: {
-            abs_i2c_start_transaction();
-        } break;
-
         default: {
            set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
         } break;
@@ -440,18 +433,18 @@ void Encoder::decode_hall_samples() {
                 | (read_sampled_gpio(hallC_gpio_) ? 4 : 0);
 }
 
-bool Encoder::abs_uart_start_transaction() {
-    if ((mode_ & MODE_FLAG_ABS) && (mode_ & MODE_FLAG_UART)){
-        if (Stm32Uart::acquire_task(&uart_task_)) {
-            uart_task_.baudrate = ENCODER_UART_BAUDRATE;
-            uart_task_.tx_buf = (uint8_t*)abs_uart_dma_tx_;
-            uart_task_.rx_buf = (uint8_t*)abs_uart_dma_rx_;
-            uart_task_.length = 1;
-            uart_task_.on_complete = [](void* ctx, bool success) { ((Encoder*)ctx)->abs_uart_cb(success); };
-            uart_task_.on_complete_ctx = this;
-            uart_task_.next = nullptr;
+bool Encoder::abs_spi_start_transaction() {
+    if (mode_ & MODE_FLAG_ABS){
+        if (Stm32SpiArbiter::acquire_task(&spi_task_)) {
+            spi_task_.ncs_gpio = abs_spi_cs_gpio_;
+            spi_task_.tx_buf = (uint8_t*)abs_spi_dma_tx_;
+            spi_task_.rx_buf = (uint8_t*)abs_spi_dma_rx_;
+            spi_task_.length = 1;
+            spi_task_.on_complete = [](void* ctx, bool success) { ((Encoder*)ctx)->abs_spi_cb(success); };
+            spi_task_.on_complete_ctx = this;
+            spi_task_.next = nullptr;
             
-            uart_->transfer_async(&uart_task_);
+            spi_arbiter_->transfer_async(&spi_task_);
         } else {
             return false;
         }
@@ -459,43 +452,7 @@ bool Encoder::abs_uart_start_transaction() {
     return true;
 }
 
-bool Encoder::abs_i2c_start_transaction() {
-    if ((mode_ & MODE_FLAG_ABS) && (mode_ & MODE_FLAG_I2C)){
-        volatile bool ret = Stm32I2c::acquire_task(&i2c_task_);
-        if (ret) {
-            i2c_task_.dev_addr = 0x06;
-            i2c_task_.reg_addr = config_.mt6701_reg_addrs[0];
-            i2c_task_.tx_buf = nullptr;
-            i2c_task_.rx_buf = abs_i2c_dma_rx_;
-            i2c_task_.length = 2;
-            i2c_task_.on_complete = [](void* ctx, bool success) { ((Encoder*)ctx)->abs_i2c_cb(success); };
-            i2c_task_.on_complete_ctx = this;
-            i2c_task_.next = nullptr;
-            
-            i2c_->transfer_async(&i2c_task_);
-        } else {
-            return false;
-        }
-    }
-    return true;
-}
-
-uint8_t ams_parity(uint16_t v) {
-    v ^= v >> 8;
-    v ^= v >> 4;
-    v ^= v >> 2;
-    v ^= v >> 1;
-    return v & 1;
-}
-
-uint8_t cui_parity(uint16_t v) {
-    v ^= v >> 8;
-    v ^= v >> 4;
-    v ^= v >> 2;
-    return ~v & 3;
-}
-
-void Encoder::abs_uart_cb(bool success) {
+void Encoder::abs_spi_cb(bool success) {
     uint16_t pos;
 
     if (!success) {
@@ -503,35 +460,13 @@ void Encoder::abs_uart_cb(bool success) {
     }
 
     switch (mode_) {
-        // TODO: Add support for more UART absolute encoders
-
-        default: {
-           set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
-           goto done;
-        } break;
-    }
-
-    pos_abs_ = pos;
-    abs_uart_pos_updated_ = true;
-    if (config_.pre_calibrated) {
-        is_ready_ = true;
-    }
-
-done:
-    Stm32Uart::release_task(&uart_task_);
-}
-
-void Encoder::abs_i2c_cb(bool success) {
-    uint16_t pos;
-
-    if (!success) {
-        goto done;
-    }
-
-    switch (mode_) {
-        case MODE_I2C_ABS_MT6701: {
-            pos = ((uint16_t)abs_i2c_dma_rx_[0] << 6) | (uint16_t)abs_i2c_dma_rx_[1];
-            pos &= 0x3FFF; // 14-bit position
+        case MODE_SPI_ABS_MT6701: {
+            uint16_t rawVal = abs_spi_dma_rx_[0];
+            // Check status bits
+            if (!(rawVal & 0x02)) { // overspeed bit
+                goto done;
+            }
+            pos = (rawVal >> 2) & 0x3FFF; // 14 bit position data
         } break;
 
         default: {
@@ -541,13 +476,21 @@ void Encoder::abs_i2c_cb(bool success) {
     }
 
     pos_abs_ = pos;
-    abs_i2c_pos_updated_ = true;
+    abs_spi_pos_updated_ = true;
     if (config_.pre_calibrated) {
         is_ready_ = true;
     }
 
 done:
-    Stm32I2c::release_task(&i2c_task_);
+    Stm32SpiArbiter::release_task(&spi_task_);
+}
+
+void Encoder::abs_spi_cs_pin_init(){
+    // Decode and init cs pin
+    abs_spi_cs_gpio_.config(GPIO_MODE_OUTPUT_PP, GPIO_PULLUP);
+
+    // Write pin high
+    abs_spi_cs_gpio_.write(true);
 }
 
 // Note that this may return counts +1 or -1 without any wrapping
@@ -634,58 +577,26 @@ bool Encoder::update() {
             }
         } break;
 
-        case MODE_SINCOS: {
-            float phase = fast_atan2(sincos_sample_s_, sincos_sample_c_);
-            int fake_count = (int)(1000.0f * phase);
-            //CPR = 6283 = 2pi * 1k
-
-            delta_enc = fake_count - count_in_cpr_;
-            delta_enc = mod(delta_enc, 6283);
-            if (delta_enc > 6283/2)
-                delta_enc -= 6283;
-        } break;
-        
-        case MODE_UART_ABS: {
-            if (abs_uart_pos_updated_ == false) {
+        case MODE_SPI_ABS_MT6701: {
+            if (abs_spi_pos_updated_ == false) {
                 // Low pass filter the error
-                uart_error_rate_ += current_meas_period * (1.0f - uart_error_rate_);
-                if (uart_error_rate_ > 0.05f) {
-                    set_error(ERROR_ABS_UART_COM_FAIL);
+                spi_error_rate_ += current_meas_period * (1.0f - spi_error_rate_);
+                if (spi_error_rate_ > 0.05f) {
+                    set_error(ERROR_ABS_SPI_COM_FAIL);
                     return false;
                 }
             } else {
                 // Low pass filter the error
-                uart_error_rate_ += current_meas_period * (0.0f - uart_error_rate_);
+                spi_error_rate_ += current_meas_period * (0.0f - spi_error_rate_);
             }
 
-            abs_uart_pos_updated_ = false;
+            abs_spi_pos_updated_ = false;
             delta_enc = pos_abs_latched - count_in_cpr_; //LATCH
             delta_enc = mod(delta_enc, config_.cpr);
             if (delta_enc > config_.cpr/2) {
                 delta_enc -= config_.cpr;
             }
 
-        }break;
-
-        case MODE_I2C_ABS_MT6701: {
-            if (abs_i2c_pos_updated_ == false) {
-                // Low pass filter the error
-                i2c_error_rate_ += current_meas_period * (1.0f - i2c_error_rate_);
-                if (i2c_error_rate_ > 0.05f) {
-                    set_error(ERROR_ABS_I2C_COM_FAIL);
-                    return false;
-                }
-            } else {
-                // Low pass filter the error
-                i2c_error_rate_ += current_meas_period * (0.0f - i2c_error_rate_);
-            }
-
-            abs_i2c_pos_updated_ = false;
-            delta_enc = pos_abs_latched - count_in_cpr_; //LATCH
-            delta_enc = mod(delta_enc, config_.cpr);
-            if (delta_enc > config_.cpr/2) {
-                delta_enc -= config_.cpr;
-            }
         }break;
 
         default: {
