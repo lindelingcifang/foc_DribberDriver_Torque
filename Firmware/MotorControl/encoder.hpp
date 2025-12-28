@@ -20,24 +20,24 @@ public:
 
     struct Config_t {
         Mode mode = MODE_HALL;
-        float calib_range = 0.02f; // Accuracy required to pass encoder cpr check
+        float calib_range = 0.025f; // Accuracy required to pass encoder cpr check
         float calib_scan_distance = 16.0f * M_PI; // rad electrical
         float calib_scan_omega = 4.0f * M_PI; // rad/s electrical
-        float bandwidth = 1000.0f;
-        int32_t phase_offset = 0;        // Offset between encoder count and rotor electrical phase
-        float phase_offset_float = 0.0f; // Sub-count phase alignment offset
-        int32_t cpr = 0x01 << 14;   // Default resolution of MT6701 encoder,
-        uint8_t mt6701_reg_addrs[2] = {0x03, 0x04}; // MT6701 position register addresses
-        bool pre_calibrated = false; // If true, this means the offset stored in
+        float bandwidth = 100.0f;  // PLL bandwidth [Hz], reduced from 1000 for noise reduction
+        float vel_filter_bandwidth = 500.0f; // Additional velocity low-pass filter bandwidth [Hz]
+        int32_t phase_offset = 27;        // Offset between encoder count and rotor electrical phase
+        float phase_offset_float = 0.501499832f; // Sub-count phase alignment offset
+        int32_t cpr = 6 * 8; // Counts per revolution
+        bool pre_calibrated = true; // If true, this means the offset stored in
                                     // configuration is valid and does not need
                                     // be determined by run_offset_calibration.
                                     // In this case the encoder will enter ready
                                     // state as soon as the index is found.
-        int32_t direction = 0; // direction with respect to motor
+        int32_t direction = 1; // direction with respect to motor
         bool enable_phase_interpolation = true; // Use velocity to interpolate inside the count state
         bool ignore_illegal_hall_state = false; // dont error on bad states like 000 or 111
         uint8_t hall_polarity = 0;
-        bool hall_polarity_calibrated = false;
+        bool hall_polarity_calibrated = true;
         std::array<float, 6> hall_edge_phcnt = hall_edge_defaults;
 
         // custom setters
@@ -47,7 +47,7 @@ public:
     };
 
     Encoder(Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio, 
-            Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio);
+            Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio, Mode mode);
     
     bool apply_config(ZfocIntf::MotorIntf::MotorType motor_type);
     void setup();
@@ -98,7 +98,8 @@ public:
     float spi_error_rate_ = 0.0f; // fraction of failed SPI transactions
 
     OutputPort<float> pos_estimate_ = 0.0f; // [turn]
-    OutputPort<float> vel_estimate_ = 0.0f; // [turn/s]
+    OutputPort<float> vel_estimate_ = 0.0f; // [turn/s] raw PLL output
+    OutputPort<float> vel_estimate_filtered_ = 0.0f; // [turn/s] low-pass filtered velocity
     OutputPort<float> pos_circular_ = 0.0f; // [turn]
 
     bool pos_estimate_valid_ = false;

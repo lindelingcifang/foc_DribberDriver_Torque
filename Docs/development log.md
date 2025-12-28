@@ -329,5 +329,86 @@ FDCAN2 and FDCAN3 can't work meanwhile. Fix the race state.
 ![alt text](image-13.png)  
 
 ![alt text](image-14.png)
-![alt text](image-15.png)
+![alt text](image-15.png)  
+
+HAL_ADC_Start can only enable regular group. Use HAL_ADCEx_InjectedStart to enable injected group.  
+```cpp
+if (HAL_ADC_Start(&hadc1) != HAL_OK && HAL_ADCEx_InjectedStart(&hadc1) != HAL_OK) {
+    zfoc.misconfigured_ = true;
+}
+if (HAL_ADC_Start(&hadc2) != HAL_OK && HAL_ADCEx_InjectedStart(&hadc2) != HAL_OK) {
+    zfoc.misconfigured_ = true;
+}
+if (HAL_ADC_Start(&hadc3) != HAL_OK && HAL_ADCEx_InjectedStart(&hadc3) != HAL_OK) {
+    zfoc.misconfigured_ = true;
+}
+```
+
+For F405, CAN_RX_FIFO0 and CAN_RX_FIFO1 are difined as below:  
+```c
+/** @defgroup CAN_receive_FIFO_number CAN Receive FIFO Number
+  * @{
+  */
+#define CAN_RX_FIFO0                (0x00000000U)  /*!< CAN receive FIFO 0 */
+#define CAN_RX_FIFO1                (0x00000001U)  /*!< CAN receive FIFO 1 */
+/**
+  * @}
+  */
+```
+However, for G474 with FDCAN, they are defined as:  
+```c
+/** @defgroup FDCAN_Rx_location FDCAN Rx Location
+  * @{
+  */
+#define FDCAN_RX_FIFO0    ((uint32_t)0x00000040U) /*!< Get received message from Rx FIFO 0    */
+#define FDCAN_RX_FIFO1    ((uint32_t)0x00000041U) /*!< Get received message from Rx FIFO 1    */
+/**
+  * @}
+  */
+```
+So when seaeching for the triggered subscription item based on header.FilterMatchIndex, we should compare with 0x40 and 0x41 instead of 0 and 1.  
+```cpp
+// 0 -> FDCAN_RX_FIFO0 (0x40)
+auto it = std::find_if(subscriptions_.begin(), subscriptions_.end(), [&](auto& s) {
+    size_t current_idx = (s.fifo == FDCAN_RX_FIFO0 ? fifo0_idx : fifo1_idx)++;
+    return (header.FilterIndex == current_idx) && (s.fifo == fifo);
+});
+```
+
+![alt text](image-16.png)  
+![alt text](image-17.png)  
+
+Increase StdFiltersNbr from 0 to 28 to enable standard ID filtering.  
+FDCAN doesn't need to shift ID and mask when configuring filter. Just use the raw ID and mask.  
+
+DC calibration shouldn't be run after the motor is armed.  
+```cpp
+if (current.has_value()) {
+    if (dc_calib_running_since_ <= config_.dc_calib_tau * 7.5f) {
+        const float calib_filter_k = std::min(dc_calib_period / config_.dc_calib_tau, 1.0f);
+        DC_calib_.phA += (current->phA - DC_calib_.phA) * calib_filter_k;
+        DC_calib_.phB += (current->phB - DC_calib_.phB) * calib_filter_k;
+        DC_calib_.phC += (current->phC - DC_calib_.phC) * calib_filter_k;
+        dc_calib_running_since_ += dc_calib_period;
+    }
+} else {
+    DC_calib_.phA = 0.0f;
+    DC_calib_.phB = 0.0f;
+    DC_calib_.phC = 0.0f;
+    dc_calib_running_since_ = 0.0f;
+}
+```
+
+CORDIC is not usable now, as it gives wrong results. Use self-implemented functions instead.  
+
+```cpp
+// Spinout check
+// If mechanical power is negative (braking) and measured power is positive, something is wrong
+// This indicates that the controller is trying to stop, but torque is being produced.
+// Usually caused by an incorrect encoder offset
+if (mechanical_power_ < config_.spinout_mechanical_power_threshold && electrical_power_ > config_.spinout_electrical_power_threshold) {
+    set_error(ERROR_SPINOUT_DETECTED);
+    return false;
+}
+```
 

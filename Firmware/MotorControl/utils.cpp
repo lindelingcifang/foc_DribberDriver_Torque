@@ -2,6 +2,7 @@
 #include <utils.hpp>
 #include <board.h>
 
+int sectant_debug = 0; // debug
 
 // Compute rising edge timings (0.0 - 1.0) as a function of alpha-beta
 // as per the magnitude invariant clarke transform
@@ -40,6 +41,8 @@ std::tuple<float, float, float, bool> SVM(float alpha, float beta) {
                 Sextant = 5; //sextant v5-v6
         }
     }
+
+    sectant_debug = Sextant; // debug
 
     switch (Sextant) {
         // sextant v1-v2

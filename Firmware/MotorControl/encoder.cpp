@@ -3,15 +3,40 @@
 #include <Drivers/STM32/stm32_system.h>
 #include <bitset>
 
+// debug variables
+uint32_t pos_abs_debug = 0;
+float pos_estimate_debug = 0;
+float vel_estimate_debug = 0;
+float pose_cirular_debug = 0;
+uint16_t raw_val_debug = 0;
+float spi_error_rate_debug = 0.0f;
+float phase_debug = 0.0f;
+int hall_state_debug = 0;
+
 Encoder::Encoder(Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio,
-                Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio) :
+                Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio,
+                Mode mode) :
         hallA_gpio_(hallA_gpio), hallB_gpio_(hallB_gpio), hallC_gpio_(hallC_gpio),
-        spi_arbiter_(spi_arbiter), abs_spi_cs_gpio_(abs_spi_cs_gpio)
+        spi_arbiter_(spi_arbiter), abs_spi_cs_gpio_(abs_spi_cs_gpio),
+        mode_(mode)
 {
+    config_.mode = mode_;
 }
 
 bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
     config_.parent = this;
+
+    switch(mode_) {
+        case MODE_HALL:
+            config_.cpr = 6 * axis_->motor_.config_.pole_pairs;
+            break;
+        case MODE_SPI_ABS_MT6701:
+            config_.cpr = (1 << 13);
+            break;
+        default:
+            set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
+            return false;
+    }
 
     update_pll_gains();
 
@@ -24,7 +49,8 @@ bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
 }
 
 void Encoder::setup() {
-    mode_ = config_.mode;
+    // Set in initialization
+    // mode_ = config_.mode;
 
     spi_task_.config = {
         .Mode = SPI_MODE_MASTER,
@@ -431,6 +457,9 @@ void Encoder::decode_hall_samples() {
     hall_state_ = (read_sampled_gpio(hallA_gpio_) ? 1 : 0)
                 | (read_sampled_gpio(hallB_gpio_) ? 2 : 0)
                 | (read_sampled_gpio(hallC_gpio_) ? 4 : 0);
+    if (axis_->axis_num_ == 0) {
+        hall_state_debug = hall_state_;
+    }
 }
 
 bool Encoder::abs_spi_start_transaction() {
@@ -462,11 +491,12 @@ void Encoder::abs_spi_cb(bool success) {
     switch (mode_) {
         case MODE_SPI_ABS_MT6701: {
             uint16_t rawVal = abs_spi_dma_rx_[0];
+            raw_val_debug = rawVal;
             // Check status bits
-            if (!(rawVal & 0x02)) { // overspeed bit
+            if (rawVal & 0x02) { // overspeed bit
                 goto done;
             }
-            pos = (rawVal >> 2) & 0x3FFF; // 14 bit position data
+            pos = (rawVal >> 2) & 0x1FFF; // 14 bit position data
         } break;
 
         default: {
@@ -581,13 +611,27 @@ bool Encoder::update() {
             if (abs_spi_pos_updated_ == false) {
                 // Low pass filter the error
                 spi_error_rate_ += current_meas_period * (1.0f - spi_error_rate_);
-                if (spi_error_rate_ > 0.05f) {
-                    set_error(ERROR_ABS_SPI_COM_FAIL);
-                    return false;
+                // debug variable
+                spi_error_rate_debug = spi_error_rate_;
+                // debug
+                if (spi_error_rate_debug > 0.95f) {
+                    volatile int a = 1;
                 }
+                // FIXME: Temporally disable error due to low reliability of MT6701 SPI
+                // if (spi_error_rate_ > 0.05f) {
+                //     set_error(ERROR_ABS_SPI_COM_FAIL);
+                //     return false;
+                // }
             } else {
                 // Low pass filter the error
                 spi_error_rate_ += current_meas_period * (0.0f - spi_error_rate_);
+                // debug variable
+                spi_error_rate_debug = spi_error_rate_;
+            }
+
+            // debug
+            if (spi_error_rate_debug > 0.95f) {
+                volatile int a = 1;
             }
 
             abs_spi_pos_updated_ = false;
@@ -645,6 +689,20 @@ bool Encoder::update() {
     // Outputs from Encoder for Controller
     pos_estimate_ = pos_estimate_counts_ / (float)config_.cpr;
     vel_estimate_ = vel_estimate_counts_ / (float)config_.cpr;
+
+    // Low-pass filter velocity estimate to reduce noise in control loop
+    // First-order IIR filter: y[n] = y[n-1] + alpha * (x[n] - y[n-1])
+    float vel_filter_alpha = std::min(current_meas_period * config_.vel_filter_bandwidth * 2.0f * M_PI, 1.0f);
+    float vel_filtered = vel_estimate_filtered_.any().value_or(0.0f);
+    vel_filtered += vel_filter_alpha * (vel_estimate_.any().value_or(0.0f) - vel_filtered);
+    vel_estimate_filtered_ = vel_filtered;
+
+    // debug variables
+    if (axis_->axis_num_ == 0) {
+        pos_abs_debug = pos_abs_;
+        pos_estimate_debug = pos_estimate_counts_ / (float)config_.cpr;
+        vel_estimate_debug = vel_filtered; // Use filtered velocity for debug
+    }
     
     // TODO: we should strictly require that this value is from the previous iteration
     // to avoid spinout scenarios. However that requires a proper way to reset
@@ -653,6 +711,9 @@ bool Encoder::update() {
     pos_circular +=  wrap_pm((pos_cpr_counts_ - pos_cpr_counts_last) / (float)config_.cpr, 1.0f);
     pos_circular = fmodf_pos(pos_circular, axis_->controller_.config_.circular_setpoint_range);
     pos_circular_ = pos_circular;
+    if (axis_->axis_num_ == 0) {
+        pose_cirular_debug = pos_circular;
+    }
 
     //// run encoder count interpolation
     int32_t corrected_enc = count_in_cpr_ - config_.phase_offset;
@@ -682,6 +743,11 @@ bool Encoder::update() {
     if (is_ready_) {
         phase_ = wrap_pm_pi(ph) * config_.direction;
         phase_vel_ = (2*M_PI) * *vel_estimate_.present() * axis_->motor_.config_.pole_pairs * config_.direction;
+
+        if (axis_->axis_num_ == 0) {
+        //debug
+        phase_debug = phase_.present().value_or(0.0f);
+        }
     }
 
     return true;

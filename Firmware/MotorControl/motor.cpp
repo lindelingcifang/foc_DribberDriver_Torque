@@ -6,6 +6,14 @@
 
 #include <algorithm>
 
+float debug_IA = 0.0f;
+float debug_IB = 0.0f;
+float debug_IC = 0.0f;
+volatile float debug_PWM_A = 0;
+volatile float debug_PWM_B = 0;
+volatile float debug_PWM_C = 0;
+float debug_torque = 0.0f;
+
 static constexpr auto CURRENT_ADC_LOWER_BOUND =        (uint32_t)((float)(1 << 12) * CURRENT_SENSE_MIN_VOLT / 3.3f);
 static constexpr auto CURRENT_ADC_UPPER_BOUND =        (uint32_t)((float)(1 << 12) * CURRENT_SENSE_MAX_VOLT / 3.3f);
 
@@ -299,7 +307,7 @@ bool Motor::setup() {
     // Solve for exact gain, then snap down to have equal or larger range as requested
     // or largest possible range otherwise
     constexpr float kMargin = 0.90f;
-    constexpr float max_output_swing = 1.35f; // [V] out of amplifier
+    constexpr float max_output_swing = 1.65f; // [V] out of amplifier
     float max_unity_gain_current = kMargin * max_output_swing * shunt_conductance_; // [A]
     float requested_gain = max_unity_gain_current / config_.requested_current_range; // [V/V]
     
@@ -474,6 +482,11 @@ void Motor::update(uint32_t timestamp) {
         return;
     }
     float torque = direction_ * *maybe_torque;
+    // float torque = *maybe_torque; // direction already handled in encoder and controller
+
+    if (axis_->axis_num_ == 0) {
+        debug_torque = torque;
+    }
 
     // Load setpoints from previous iteration.
     auto [id, iq] = Idq_setpoint_.previous()
@@ -537,6 +550,19 @@ void Motor::current_meas_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current
     // TODO: this is platform specific
     //const float current_meas_period = static_cast<float>(2 * HRTIM_PERIOD_CLOCKS * (TIM_1_8_RCR + 1)) / HRTIM_APB2_CLOCK_HZ;
     TaskTimerContext tmr{axis_->task_times_.current_sense};
+
+    // debug
+    if (timer_->Instance == TIM1) {
+        if (current.has_value()) {
+            debug_IA = current->phA;
+            debug_IB = current->phB;
+            debug_IC = current->phC;
+        } else {
+            debug_IA = 2;
+            debug_IB = 2;
+            debug_IC = 2;
+        }
+    }
 
     n_evt_current_measurement_++;
 
@@ -605,20 +631,22 @@ void Motor::dc_calib_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current) {
     const float dc_calib_period = static_cast<float>(2 * TIM_1_8_PERIOD_CLOCKS * (TIM_1_8_RCR + 1)) / TIM_1_8_CLOCK_HZ;
     TaskTimerContext tmr{axis_->task_times_.dc_calib};
 
-    if (current.has_value()) {
-        const float calib_filter_k = std::min(dc_calib_period / config_.dc_calib_tau, 1.0f);
-        DC_calib_.phA += (current->phA - DC_calib_.phA) * calib_filter_k;
-        DC_calib_.phB += (current->phB - DC_calib_.phB) * calib_filter_k;
-        DC_calib_.phC += (current->phC - DC_calib_.phC) * calib_filter_k;
-        dc_calib_running_since_ += dc_calib_period;
-    } else {
-        DC_calib_.phA = 0.0f;
-        DC_calib_.phB = 0.0f;
-        DC_calib_.phC = 0.0f;
-        dc_calib_running_since_ = 0.0f;
-    }
+    
+        if (current.has_value()) {
+            if (dc_calib_running_since_ <= config_.dc_calib_tau * 7.5f) {
+                const float calib_filter_k = std::min(dc_calib_period / config_.dc_calib_tau, 1.0f);
+                DC_calib_.phA += (current->phA - DC_calib_.phA) * calib_filter_k;
+                DC_calib_.phB += (current->phB - DC_calib_.phB) * calib_filter_k;
+                DC_calib_.phC += (current->phC - DC_calib_.phC) * calib_filter_k;
+                dc_calib_running_since_ += dc_calib_period;
+            }
+        } else {
+            DC_calib_.phA = 0.0f;
+            DC_calib_.phB = 0.0f;
+            DC_calib_.phC = 0.0f;
+            dc_calib_running_since_ = 0.0f;
+        }
 }
-
 
 void Motor::pwm_update_cb(uint32_t output_timestamp) {
     TaskTimerContext tmr{axis_->task_times_.pwm_update};
@@ -631,6 +659,12 @@ void Motor::pwm_update_cb(uint32_t output_timestamp) {
     if (control_law_) {
         control_law_status = control_law_->get_output(
             output_timestamp, pwm_timings, &i_bus);
+    }
+    if (timer_->Instance == TIM1) {
+        //debug
+        debug_PWM_A = is_nan(pwm_timings[0]) ? 0.0f : pwm_timings[0];
+        debug_PWM_B = is_nan(pwm_timings[1]) ? 0.0f : pwm_timings[1];
+        debug_PWM_C = is_nan(pwm_timings[2]) ? 0.0f : pwm_timings[2];
     }
 
     // Apply control law to calculate PWM duty cycles

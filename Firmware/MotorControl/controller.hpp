@@ -8,8 +8,8 @@ public:
         float cogging_map[3600];
         bool pre_calibrated = false;
         bool calib_anticogging = false;
-        float calib_pos_threshold = 1.0f;
-        float calib_vel_threshold = 1.0f;
+        float calib_pos_threshold = 200.0f;
+        float calib_vel_threshold = 200.0f;
         float cogging_ratio = 1.0f;
         bool anticogging_enabled = true;
     };
@@ -22,14 +22,14 @@ public:
     };
 
     struct Config_t {
-        ControlMode control_mode = CONTROL_MODE_POSITION_CONTROL;  //see: ControlMode_t
+        ControlMode control_mode = CONTROL_MODE_TORQUE_CONTROL;  //see: ControlMode_t
         InputMode input_mode = INPUT_MODE_PASSTHROUGH;             //see: InputMode_t
         float pos_gain = 20.0f;                  // [(turn/s) / turn]
-        float vel_gain = 1.0f / 6.0f;            // [Nm/(turn/s)]
+        float vel_gain = 1.0f / 12.0f;            // [Nm/(turn/s)]
         // float vel_gain = 0.2f / 200.0f,       // [Nm/(rad/s)] <sensorless example>
         float vel_integrator_gain = 2.0f / 6.0f; // [Nm/(turn/s * s)]
-        float vel_limit = 2.0f;                  // [turn/s] Infinity to disable.
-        float vel_limit_tolerance = 1.2f;        // ratio to vel_lim. Infinity to disable.
+        float vel_limit = 5.0f;                  // [turn/s] Infinity to disable.
+        float vel_limit_tolerance = INFINITY;        // ratio to vel_lim. Infinity to disable.
         float vel_integrator_limit = INFINITY;   // Vel. integrator clamping value. Infinity to disable.
         float vel_ramp_rate = 1.0f;              // [(turn/s) / s]
         float torque_ramp_rate = 0.01f;          // Nm / sec

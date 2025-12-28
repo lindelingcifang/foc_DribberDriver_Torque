@@ -25,7 +25,7 @@
 
 #define DEFAULT_BRAKE_RESISTANCE (10.0f) // [Ohm] physical resistor on the board
 
-#define DEFAULT_MIN_DC_VOLTAGE 8.0f
+#define DEFAULT_MIN_DC_VOLTAGE 0.0f
 
 #define DEFAULT_GPIO_MODES \
     ZfocIntf::GPIO_MODE_DIGITAL,          /* GPIO0  */ \
@@ -78,8 +78,8 @@ static const int current_meas_hz = (int)CURRENT_MEAS_HZ;
 
 // Linear range of the DRV8301 opamp output: 0.3V...5.7V. We set the upper limit
 // to 3.0V so that it's symmetric around the center point of 1.65V.
-#define CURRENT_SENSE_MIN_VOLT  0.3f
-#define CURRENT_SENSE_MAX_VOLT  3.0f
+#define CURRENT_SENSE_MIN_VOLT  0.0f
+#define CURRENT_SENSE_MAX_VOLT  3.3f
 
 // This board has no board-specific user configurations
 static inline bool board_read_config() { return true; }

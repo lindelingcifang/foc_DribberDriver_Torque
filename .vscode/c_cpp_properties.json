@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/Firmware/ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+                "${workspaceFolder}/Firmware/ThirdParty/CMSIS/DSP/Include",
                 "${workspaceFolder}/Firmware/Interface",
                 "${workspaceFolder}/Firmware/Board/v2/Core/Inc",
                 "/usr/lib/arm-none-eabi/include",

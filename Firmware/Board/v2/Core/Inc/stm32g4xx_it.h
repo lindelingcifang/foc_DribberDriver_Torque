@@ -57,6 +57,7 @@ void DMA1_Channel2_IRQHandler(void);
 void FDCAN1_IT0_IRQHandler(void);
 void FDCAN1_IT1_IRQHandler(void);
 void TIM1_TRG_COM_TIM17_IRQHandler(void);
+void SPI1_IRQHandler(void);
 void FDCAN2_IT0_IRQHandler(void);
 void FDCAN2_IT1_IRQHandler(void);
 /* USER CODE BEGIN EFP */

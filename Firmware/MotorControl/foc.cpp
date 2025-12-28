@@ -2,6 +2,11 @@
 #include "foc.hpp"
 #include <board.h>
 
+float alpha_debug = 0.0f; // debug
+float beta_debug = 0.0f;  // debug
+float cos_p_debug = 0.0f; // debug
+float sin_p_debug = 0.0f; // debug
+
 Motor::Error AlphaBetaFrameController::on_measurement(
             std::optional<float> vbus_voltage,
             std::optional<std::array<float, 3>> currents,
@@ -32,8 +37,14 @@ Motor::Error AlphaBetaFrameController::get_output(
         return Motor::ERROR_MODULATION_IS_NAN;
     }
 
+    // debug
+    alpha_debug = mod_alpha_beta->first;
+    beta_debug = mod_alpha_beta->second;
+
     auto [tA, tB, tC, success] = SVM(mod_alpha_beta->first, mod_alpha_beta->second);
     if (!success) {
+        // debug
+        volatile int tmp = 0;
         return Motor::ERROR_MODULATION_MAGNITUDE;
     }
 
@@ -168,9 +179,9 @@ ZfocIntf::MotorIntf::Error FieldOrientedController::get_alpha_beta_output(
     float mod_alpha = c_p * mod_d - s_p * mod_q;
     float mod_beta = c_p * mod_q + s_p * mod_d;
 
-    // Report final applied voltage in stationary frame (for sensorless estimator)
-    final_v_alpha_ = mod_to_V * mod_alpha;
-    final_v_beta_ = mod_to_V * mod_beta;
+    // debug
+    cos_p_debug = c_p;
+    sin_p_debug = s_p;
 
     *mod_alpha_beta = {mod_alpha, mod_beta};
 

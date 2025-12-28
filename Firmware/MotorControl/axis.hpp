@@ -17,14 +17,14 @@ class Axis;
 class Axis : public ZfocIntf::AxisIntf {
 public:
     struct LockinConfig_t {
-        float current = 10.0f;           // [A]
+        float current = 1.0f;           // [A]
         float ramp_time = 0.4f;          // [s]
         float ramp_distance = 1 * M_PI;  // [rad]
         float accel = 20.0f;     // [rad/s^2]
-        float vel = 40.0f; // [rad/s]
-        float finish_distance = 100.0f;  // [rad]
+        float vel = 100.0f; // [rad/s]
+        float finish_distance = 1000.0f;  // [rad]
         bool finish_on_vel = false;
-        bool finish_on_distance = false;
+        bool finish_on_distance = true;
     };
 
     struct TaskTimes {
@@ -63,7 +63,7 @@ public:
     };
 
     struct Config_t {
-        bool startup_motor_calibration = false;   //<! run motor calibration at startup, skip otherwise
+        bool startup_motor_calibration = true;   //<! run motor calibration at startup, skip otherwise
         bool startup_encoder_index_search = false; //<! run encoder index search after startup, skip otherwise
                                                 // this only has an effect if encoder.config.use_index is also true
         bool startup_encoder_offset_calibration = false; //<! run encoder offset calibration after startup, skip otherwise

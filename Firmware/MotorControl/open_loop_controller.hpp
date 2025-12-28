@@ -27,6 +27,9 @@ public:
     OutputPort<float> phase_ = 0.0f;
     OutputPort<float> phase_vel_ = 0.0f;
     OutputPort<float> total_distance_ = 0.0f;
+
+    uint32_t axis_num_ = 0; // set by Axis constructor
+
 };
 
 #endif // __OPEN_LOOP_CONTROLLER_HPP

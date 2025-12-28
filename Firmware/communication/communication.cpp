@@ -19,8 +19,8 @@ void init_communication(void) {
         zfoc.can_a.start_server(&hfdcan1, FDCAN1);
     }
 
-    if (zfoc.config_.enable_can_b) {
-        zfoc.can_b.start_server(&hfdcan2, FDCAN2);
-    }
+    // if (zfoc.config_.enable_can_b) {
+    //     zfoc.can_b.start_server(&hfdcan2, FDCAN2);
+    // }
 }
 

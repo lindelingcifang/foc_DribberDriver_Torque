@@ -143,6 +143,7 @@ cmsis_pkg = {
     include_dirs = {
         'Include',
         'Device/ST/STM32G4xx/Include',
+        'DSP/Include',
     },
     ldflags = {
         '-LThirdParty/CMSIS/Lib/GCC',

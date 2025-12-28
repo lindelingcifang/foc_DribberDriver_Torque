@@ -30,7 +30,7 @@ const uint32_t stack_size_analog_thread = 1024;  // Bytes
 
 // This value is updated by the DC-bus reading ADC.
 // Arbitrary non-zero inital value to avoid division by zero if ADC reading is late
-float vbus_voltage = 24.0f;
+float vbus_voltage = 12.0f;
 float ibus_ = 0.0f; // exposed for monitoring only
 bool brake_resistor_armed = false;
 bool brake_resistor_saturated = false;
@@ -141,10 +141,22 @@ void start_adc_pwm() {
         motor.timer_->Instance->CCER |= (TIM_CCxN_ENABLE << TIM_CHANNEL_3);
     }
 
-    // Enable ADC and interrupts
-    ADC1->CR |= ADC_CR_ADEN;
-    ADC2->CR |= ADC_CR_ADEN;
-    ADC3->CR |= ADC_CR_ADEN;
+    // Enable ADCs
+    // ADC1->CR |= ADC_CR_ADEN;
+    // ADC2->CR |= ADC_CR_ADEN;
+    // ADC3->CR |= ADC_CR_ADEN;
+    HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+    HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
+    HAL_ADCEx_Calibration_Start(&hadc3, ADC_SINGLE_ENDED);
+    if (HAL_ADC_Start(&hadc1) != HAL_OK || HAL_ADCEx_InjectedStart(&hadc1) != HAL_OK) {
+        zfoc.misconfigured_ = true;
+    }
+    if (HAL_ADC_Start(&hadc2) != HAL_OK || HAL_ADCEx_InjectedStart(&hadc2) != HAL_OK) {
+        zfoc.misconfigured_ = true;
+    }
+    if (HAL_ADC_Start(&hadc3) != HAL_OK || HAL_ADCEx_InjectedStart(&hadc3) != HAL_OK) {
+        zfoc.misconfigured_ = true;
+    }
 
     // Warp field stabilize.
     osDelay(2);

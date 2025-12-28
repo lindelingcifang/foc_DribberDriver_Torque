@@ -109,8 +109,10 @@ class BusData:
 
 class ZFOCDriver:
     def __init__(self, channel: str, node_id: int, bustype: str = 'socketcan', 
-                 bitrate: int = 500000, is_extended: bool = False):
+                 bitrate: int = 1000000, is_extended: bool = False):
         self.protocol = CANSimpleProtocol(node_id, is_extended)
+        self.current_node_id = node_id
+        self.is_extended = is_extended
         try:
             # socketcan不需要在这里设置bitrate，应该在系统层面配置
             self.bus = can.interface.Bus(channel=channel, bustype=bustype)
@@ -166,6 +168,11 @@ class ZFOCDriver:
     
     def _handle_message(self, msg):
         """处理接收到的CAN消息"""
+        # 检查消息是否来自当前节点
+        node_id = (msg.arbitration_id >> CANSimpleProtocol.NUM_CMD_ID_BITS)
+        if node_id != self.current_node_id:
+            return  # 忽略其他节点的消息
+        
         cmd_id = msg.arbitration_id & 0x1F  # 提取命令ID
         
         # 心跳消息处理
@@ -216,6 +223,23 @@ class ZFOCDriver:
     def register_callback(self, message_type: str, callback: Callable):
         """注册消息回调函数"""
         self.callbacks[message_type] = callback
+    
+    def set_node_id(self, node_id: int):
+        """设置节点ID"""
+        if node_id < 0 or node_id >= (1 << CANSimpleProtocol.NUM_NODE_ID_BITS):
+            print(f"错误: 节点ID必须在0到{(1 << CANSimpleProtocol.NUM_NODE_ID_BITS) - 1}之间")
+            return False
+        
+        old_node_id = self.current_node_id
+        self.current_node_id = node_id
+        self.protocol = CANSimpleProtocol(node_id, self.is_extended)
+        print(f"节点ID已从 {old_node_id} 更改为 {node_id}")
+        print(f"基础ID: 0x{self.protocol.base_id:03X} ({self.protocol.base_id})")
+        return True
+    
+    def get_node_id(self) -> int:
+        """获取当前节点ID"""
+        return self.current_node_id
     
     def _send_message(self, command_id: int, data: bytes = None, rtr: bool = False):
         """发送CAN消息"""
@@ -327,12 +351,14 @@ class ZFOCShell(cmd.Cmd):
     def __init__(self, driver):
         super().__init__()
         self.driver = driver
+        self.show_heartbeat = False
         self.setup_callbacks()
     
     def setup_callbacks(self):
         """设置回调函数"""
         def heartbeat_callback(data: HeartbeatData):
-            print(f"\n[心跳] 状态: {data.current_state.name}, 错误: 0x{data.error:08X}")
+            if self.show_heartbeat:
+                print(f"\n[心跳] 状态: {data.current_state.name}, 错误: 0x{data.error:08X}")
         
         def encoder_callback(data: EncoderEstimates):
             print(f"\n[编码器] 位置: {data.pos_estimate:.3f}, 速度: {data.vel_estimate:.3f}")
@@ -363,6 +389,9 @@ class ZFOCShell(cmd.Cmd):
         """显示驱动器状态"""
         status = self.driver.get_status()
         print(f"\n驱动器状态:")
+        print(f"  节点ID: {self.driver.get_node_id()} (0x{self.driver.get_node_id():02X})")
+        print(f"  基础CAN ID: 0x{self.driver.protocol.base_id:03X} ({self.driver.protocol.base_id})")
+        print(f"  扩展ID模式: {'是' if self.driver.is_extended else '否'}")
         print(f"  连接状态: {'已连接' if status['connected'] else '未连接'}")
         
         if status['last_heartbeat']:
@@ -386,6 +415,39 @@ class ZFOCShell(cmd.Cmd):
         if self.driver.clear_errors():
             print("错误清除命令已发送")
         time.sleep(0.1)
+
+    def do_heartbeat(self, arg):
+        """开启/关闭心跳打印: heartbeat on|off|toggle"""
+        choice = arg.strip().lower()
+        if choice in ("on", "true", "1"):
+            self.show_heartbeat = True
+        elif choice in ("off", "false", "0"):
+            self.show_heartbeat = False
+        elif choice == "toggle" or choice == "":
+            self.show_heartbeat = not self.show_heartbeat
+        else:
+            print("用法: heartbeat on|off|toggle")
+            return
+        state = "开启" if self.show_heartbeat else "关闭"
+        print(f"心跳打印已{state}")
+    
+    def do_node_id(self, arg):
+        """设置或显示节点ID: node_id [新ID]"""
+        if not arg:
+            # 显示当前节点ID
+            node_id = self.driver.get_node_id()
+            print(f"当前节点ID: {node_id} (0x{node_id:02X})")
+            print(f"基础CAN ID: 0x{self.driver.protocol.base_id:03X} ({self.driver.protocol.base_id})")
+            print(f"命令ID位数: {CANSimpleProtocol.NUM_CMD_ID_BITS}")
+            print(f"节点ID位数: {CANSimpleProtocol.NUM_NODE_ID_BITS}")
+            print(f"节点ID范围: 0-{(1 << CANSimpleProtocol.NUM_NODE_ID_BITS) - 1}")
+            return
+        
+        try:
+            new_id = int(arg, 0)  # 支持十进制和0x十六进制
+            self.driver.set_node_id(new_id)
+        except ValueError:
+            print("错误: 节点ID必须是数字")
     
     def do_idle(self, arg):
         """设置轴为空闲状态"""
@@ -397,6 +459,12 @@ class ZFOCShell(cmd.Cmd):
         """设置轴为闭环控制状态"""
         if self.driver.set_axis_state(AxisState.CLOSED_LOOP_CONTROL):
             print("轴已设置为闭环控制状态")
+        time.sleep(0.1)
+    
+    def do_full_calibration(self, arg):
+        """设置轴为完整校准状态"""
+        if self.driver.set_axis_state(AxisState.FULL_CALIBRATION_SEQUENCE):
+            print("轴已设置为完整校准状态")
         time.sleep(0.1)
     
     def do_position_mode(self, arg):
@@ -415,6 +483,36 @@ class ZFOCShell(cmd.Cmd):
         """设置扭矩控制模式"""
         if self.driver.set_controller_modes(ControlMode.TORQUE_CONTROL, InputMode.PASSTHROUGH):
             print("已设置为扭矩控制模式")
+        time.sleep(0.1)
+
+    def do_motor_calibration(self, arg):
+        """设置轴为电机校准状态"""
+        if self.driver.set_axis_state(AxisState.MOTOR_CALIBRATION):
+            print("轴已设置为电机校准状态")
+        time.sleep(0.1)
+
+    def do_anticogging(self, arg):
+        """启动抗齿槽转矩校准"""
+        if self.driver.start_anticogging():
+            print("抗齿槽转矩校准命令已发送")
+        time.sleep(0.1)
+
+    def do_encoder_dir_find(self, arg):
+        """设置轴为编码器方向查找状态"""
+        if self.driver.set_axis_state(AxisState.ENCODER_DIR_FIND):
+            print("轴已设置为编码器方向查找状态")
+        time.sleep(0.1)
+
+    def do_encoder_offset_calibration(self, arg):
+        """设置轴为编码器偏移校准状态"""
+        if self.driver.set_axis_state(AxisState.ENCODER_OFFSET_CALIBRATION):
+            print("轴已设置为编码器偏移校准状态")
+        time.sleep(0.1)
+
+    def do_locking_spin(self, arg):
+        """设置轴为锁定旋转状态"""
+        if self.driver.set_axis_state(AxisState.LOCKIN_SPIN):
+            print("轴已设置为锁定旋转状态")
         time.sleep(0.1)
     
     def do_move(self, arg):
@@ -578,19 +676,36 @@ class ZFOCShell(cmd.Cmd):
 
 def main():
     """主函数"""
+    import argparse
+    
     print("ZFOC CAN协议测试工具")
     print("=" * 40)
     
-    # 配置参数
-    channel = 'can0'
-    node_id = 0x01
-    bitrate = 500000
+    # 命令行参数解析
+    parser = argparse.ArgumentParser(description='ZFOC CAN协议测试工具')
+    parser.add_argument('-c', '--channel', default='can0', help='CAN接口名称 (默认: can0)')
+    parser.add_argument('-n', '--node-id', type=lambda x: int(x, 0), default=0x00, 
+                        help='节点ID (默认: 0x01, 支持十进制或0x十六进制)')
+    parser.add_argument('-b', '--bitrate', type=int, default=500000, 
+                        help='比特率 (默认: 500000)')
+    parser.add_argument('-e', '--extended', action='store_true', 
+                        help='使用扩展ID模式')
     
-    print(f"配置: 接口={channel}, 节点ID={node_id}, 比特率={bitrate}")
+    args = parser.parse_args()
+    
+    # 验证节点ID范围
+    max_node_id = (1 << CANSimpleProtocol.NUM_NODE_ID_BITS) - 1
+    if args.node_id < 0 or args.node_id > max_node_id:
+        print(f"错误: 节点ID必须在0到{max_node_id}之间")
+        sys.exit(1)
+    
+    print(f"配置: 接口={args.channel}, 节点ID={args.node_id} (0x{args.node_id:02X}), 比特率={args.bitrate}")
+    print(f"扩展ID: {'是' if args.extended else '否'}")
     print("正在初始化驱动器...")
     
     # 创建驱动器实例
-    driver = ZFOCDriver(channel=channel, node_id=node_id, bitrate=bitrate)
+    driver = ZFOCDriver(channel=args.channel, node_id=args.node_id, 
+                        bitrate=args.bitrate, is_extended=args.extended)
     
     if not driver.connected:
         print("无法连接到CAN总线，请检查:")

@@ -84,7 +84,7 @@ struct BoardConfig_t {
                                                                     //!< otherwise the ramp feature is disabled.
 
     float dc_max_positive_current = INFINITY; // Max current [A] the power supply can source
-    float dc_max_negative_current = -0.01f; // Max current [A] the power supply can sink. You most likely want a non-positive value here. Set to -INFINITY to disable.
+    float dc_max_negative_current = -10.0f; // Max current [A] the power supply can sink. You most likely want a non-positive value here. Set to -INFINITY to disable.
 };
 
 struct TaskTimes {

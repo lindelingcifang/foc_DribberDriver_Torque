@@ -59,10 +59,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define TIM_1_8_PERIOD_CLOCKS 6800
 #define TIM_APB1_CLOCK_HZ 170000000
+#define TIM_APB2_CLOCK_HZ 170000000
 #define TIM_1_8_RCR 2
 #define TIM_1_8_DEADTIME_CLOCKS 40
 #define TIM_1_8_CLOCK_HZ 170000000
-#define TIM_APB2_CLOCK_HZ 170000000
 #define TIM_2_PERIOD_CLOCKS 4096
 
 /* USER CODE BEGIN Private defines */

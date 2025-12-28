@@ -3,6 +3,11 @@
 #include <algorithm>
 #include <numeric>
 
+float closed_torque_debug = 0.0f; // debug
+float vel_int_torq_debug = 0.0f; // debug
+float vel_err_debug = 0.0f; // debug
+float pos_err_debug = 0.0f; // debug
+
 bool Controller::apply_config() {
     config_.parent = this;
     update_filter_gains();
@@ -304,7 +309,7 @@ bool Controller::update() {
             // Keep pos setpoint from drifting
             pos_setpoint_ = fmodf_pos(pos_setpoint_, *pos_wrap);
             // Circular delta
-            pos_err = pos_setpoint_ - *pos_estimate_circular;
+            pos_err = *pos_estimate_circular - pos_setpoint_;
             pos_err = wrap_pm(pos_err, *pos_wrap);
         } else {
             if (!pos_estimate_linear.has_value()) {
@@ -372,6 +377,11 @@ bool Controller::update() {
 
         // Velocity integral action before limiting
         torque += vel_integrator_torque_;
+
+        if (axis_->axis_num_ == 0) {
+            //debug
+            vel_err_debug = v_err;
+        }
     }
 
     // Velocity limiting in current mode
@@ -408,6 +418,10 @@ bool Controller::update() {
         // integrator limiting to prevent windup 
         vel_integrator_torque_ = std::clamp(vel_integrator_torque_, -config_.vel_integrator_limit, config_.vel_integrator_limit);
     }
+    if (axis_->axis_num_ == 0) {
+        //debug
+        vel_int_torq_debug = vel_integrator_torque_;
+    }
 
     float ideal_electrical_power = 0.0f;
     if (axis_->motor_.config_.motor_type != Motor::MOTOR_TYPE_GIMBAL) {
@@ -431,6 +445,10 @@ bool Controller::update() {
     }
 
     torque_output_ = torque;
+    if (axis_->axis_num_ == 0) {
+        //debug
+        closed_torque_debug = torque;
+    }
 
     // TODO: this is inconsistent with the other errors which are sticky.
     // However if we make ERROR_INVALID_ESTIMATE sticky then it will be

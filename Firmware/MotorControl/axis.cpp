@@ -24,18 +24,19 @@ Axis::Axis(int axis_num,
     controller_.axis_ = this;
     motor_.axis_ = this;
     trap_traj_.axis_ = this;
+    open_loop_controller_.axis_num_ = axis_num_;
 }
 
 Axis::LockinConfig_t Axis::default_calibration() {
     Axis::LockinConfig_t config;
-    config.current = 10.0f;           // [A]
-    config.ramp_time = 0.4f;          // [s]
-    config.ramp_distance = 1 * M_PI;  // [rad]
-    config.accel = 20.0f;     // [rad/s^2]
-    config.vel = 40.0f; // [rad/s]
-    config.finish_distance = 100.0f * 2.0f * M_PI;  // [rad]
-    config.finish_on_vel = false;
-    config.finish_on_distance = true;
+    // config.current = 10.0f;           // [A]
+    // config.ramp_time = 0.4f;          // [s]
+    // config.ramp_distance = 1 * M_PI;  // [rad]
+    // config.accel = 20.0f;     // [rad/s^2]
+    // config.vel = 40.0f; // [rad/s]
+    // config.finish_distance = 100.0f * 2.0f * M_PI;  // [rad]
+    // config.finish_on_vel = false;
+    // config.finish_on_distance = true;
     return config;
 }
 

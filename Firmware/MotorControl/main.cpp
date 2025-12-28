@@ -57,7 +57,7 @@ static void config_clear_all() {
     zfoc.can_a.config_ = {};
     zfoc.can_b.config_ = {};
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
-        encoders[i].config_ = {};
+        // encoders[i].config_ = {};
         axes[i].controller_.config_ = {};
         axes[i].controller_.config_.load_encoder_axis = i;
         axes[i].trap_traj_.config_ = {};
@@ -451,107 +451,6 @@ extern "C" int main(void) {
     // Init board-specific peripherals
     if (!board_init()) {
         for (;;); // TODO: handle properly
-    }
-
-    // Init GPIOs according to their configured mode
-    for (size_t i = 0; i < GPIO_COUNT; ++i) {
-        // Skip unavailable GPIOs
-        if (!get_gpio(i)) {
-            continue;
-        }
-
-        ZfocIntf::GpioMode mode = zfoc.config_.gpio_modes[i];
-
-        GPIO_InitTypeDef GPIO_InitStruct;
-        GPIO_InitStruct.Pin = get_gpio(i).pin_mask_;
-
-        // Set Alternate Function setting for this GPIO mode
-        if (mode == ZfocIntf::GPIO_MODE_DIGITAL ||
-            mode == ZfocIntf::GPIO_MODE_DIGITAL_PULL_UP ||
-            mode == ZfocIntf::GPIO_MODE_DIGITAL_PULL_DOWN ||
-            mode == ZfocIntf::GPIO_MODE_STATUS ||
-            mode == ZfocIntf::GPIO_MODE_ANALOG_IN) {
-            GPIO_InitStruct.Alternate = 0;
-        // } else {
-        //     auto it = std::find_if(
-        //             alternate_functions[i].begin(), alternate_functions[i].end(),
-        //             [mode](auto a) { return a.mode == mode; });
-
-        //     if (it == alternate_functions[i].end()) {
-        //         zfoc.misconfigured_ = true; // this GPIO doesn't support the selected mode
-        //         continue;
-        //     }
-        //     GPIO_InitStruct.Alternate = it->alternate_function;
-        }
-
-        switch (mode) {
-            case ZfocIntf::GPIO_MODE_DIGITAL: {
-                GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-            } break;
-            case ZfocIntf::GPIO_MODE_DIGITAL_PULL_UP: {
-                GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-                GPIO_InitStruct.Pull = GPIO_PULLUP;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-            } break;
-            case ZfocIntf::GPIO_MODE_DIGITAL_PULL_DOWN: {
-                GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-                GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-            } break;
-            case ZfocIntf::GPIO_MODE_ANALOG_IN: {
-                GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-            } break;
-            case ZfocIntf::GPIO_MODE_UART: {
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = (i == 0) ? GPIO_PULLDOWN : GPIO_PULLUP; // this is probably swapped but imitates old behavior
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                if (!zfoc.config_.enable_uart) {
-                    zfoc.misconfigured_ = true;
-                }
-            } break;
-            case ZfocIntf::GPIO_MODE_CAN_A: {
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                if (!zfoc.config_.enable_can_a) {
-                    zfoc.misconfigured_ = true;
-                }
-            } break;
-            case ZfocIntf::GPIO_MODE_CAN_B: {
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                if (!zfoc.config_.enable_can_b) {
-                    zfoc.misconfigured_ = true;
-                }
-            } break;
-            //case ZfocIntf::GPIO_MODE_SPI_A: { // TODO
-            //} break;
-            case ZfocIntf::GPIO_MODE_PWM: {
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-            } break;
-            case ZfocIntf::GPIO_MODE_ENC: {
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-            } break;
-            case ZfocIntf::GPIO_MODE_STATUS: {
-                GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-            } break;
-            default: {
-                zfoc.misconfigured_ = true;
-                continue;
-            }
-        }
-
-        HAL_GPIO_Init(get_gpio(i).port_, &GPIO_InitStruct);
     }
 
     osSemaphoreDef(sem_can);

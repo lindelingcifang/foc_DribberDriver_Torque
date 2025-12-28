@@ -1,71 +1,79 @@
 
 
-
-Breakpoint=/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_i2c.cpp:21, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp:462, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp:525, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp:542, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/Board/v1/Core/Src/stm32g4xx_it.c:182:3, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/Board/v1/Core/Src/stm32g4xx_it.c:196:3, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/Board/v1/Core/Src/stm32g4xx_it.c:274, State=BP_STATE_ON
-Breakpoint=/home/lxl/zfoc/Firmware/Board/v1/board.cpp:135, State=BP_STATE_ON
-GraphedExpression="adc_vals[0]", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#e56a6f, Show=0
-OpenDocument="core_cm4.h", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/CMSIS/Include/core_cm4.h", Line=1843
-OpenDocument="tasks.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/FreeRTOS/Source/tasks.c", Line=3789
-OpenDocument="main.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/main.cpp", Line=426
-OpenDocument="stm32g4xx_hal_cortex.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c", Line=172
-OpenDocument="board.cpp", FilePath="/home/lxl/zfoc/Firmware/Board/v1/board.cpp", Line=121
-OpenDocument="startup_stm32g474xx.s", FilePath="/home/lxl/zfoc/Firmware/Board/v1/startup_stm32g474xx.s", Line=48
-OpenDocument="stm32g4xx_it.c", FilePath="/home/lxl/zfoc/Firmware/Board/v1/Core/Src/stm32g4xx_it.c", Line=260
-OpenDocument="stm32g4xx_hal_hrtim.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_hrtim.c", Line=7949
-OpenDocument="task_timer.hpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/task_timer.hpp", Line=12
-OpenDocument="stm32_system.h", FilePath="/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_system.h", Line=10
-OpenDocument="cmsis_gcc.h", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/CMSIS/Include/cmsis_gcc.h", Line=181
-OpenDocument="encoder.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp", Line=511
-OpenDocument="stm32g4xx_hal_i2c.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_i2c.c", Line=4625
-OpenDocument="stm32_i2c.cpp", FilePath="/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_i2c.cpp", Line=0
-OpenDocument="wf_sqrt.c", FilePath="/build/newlib-gzz9w0/newlib-4.5.0.20241231/newlib/libm/math/wf_sqrt.c", Line=0
+Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/motor.cpp:455:31, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/axis.cpp:208:5, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/axis.cpp:417, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/foc.cpp:79:37, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/Board/v2/board.cpp:250:56, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/communication/can/zfoc_can.cpp:76, State=BP_STATE_ON
+Breakpoint=/home/lxl/zfoc/Firmware/communication/can/zfoc_can.cpp:105, State=BP_STATE_ON
+Breakpoint=/home/lxl/zfoc/Firmware/communication/can/zfoc_can.cpp:138, State=BP_STATE_ON
+GraphedExpression="hall_state_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#e56a6f
+GraphedExpression="pos_estimate_debug", Color=#35792b, Show=0
+GraphedExpression="vel_estimate_debug", Color=#769dda, Show=0
+GraphedExpression="debug_IA", Color=#b14f0d
+GraphedExpression="debug_IB", Color=#b3c38e
+GraphedExpression="debug_IC", Color=#ab7b05
+GraphedExpression="debug_torque", Color=#7fd3b7, Show=0
+OpenDocument="zfoc_can.cpp", FilePath="/home/lxl/zfoc/Firmware/communication/can/zfoc_can.cpp", Line=24
+OpenDocument="list.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/FreeRTOS/Source/list.c", Line=133
+OpenDocument="stm32g4xx_it.c", FilePath="/home/lxl/zfoc/Firmware/Board/v2/Core/Src/stm32g4xx_it.c", Line=91
+OpenDocument="main.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/main.cpp", Line=420
+OpenDocument="motor.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/motor.cpp", Line=0
+OpenDocument="encoder.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp", Line=0
+OpenDocument="startup_stm32g474xx.s", FilePath="/home/lxl/zfoc/Firmware/Board/v2/startup_stm32g474xx.s", Line=52
+OpenDocument="controller.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/controller.cpp", Line=0
+OpenDocument="board.cpp", FilePath="/home/lxl/zfoc/Firmware/Board/v2/board.cpp", Line=325
+OpenDocument="foc.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/foc.cpp", Line=0
+OpenDocument="component.hpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/component.hpp", Line=131
+OpenDocument="open_loop_controller.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/open_loop_controller.cpp", Line=0
+OpenDocument="optional", FilePath="/usr/include/newlib/c++/13.2.1/optional", Line=200
+OpenDocument="tasks.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/FreeRTOS/Source/tasks.c", Line=3795
+OpenDocument="stl_algobase.h", FilePath="/usr/include/newlib/c++/13.2.1/bits/stl_algobase.h", Line=247
+OpenDocument="2.csv", FilePath="/home/lxl/zfoc/Tools/Debug/2.csv", Line=0
+OpenDocument="variant", FilePath="/usr/include/newlib/c++/13.2.1/variant", Line=1584
+OpenDocument="stm32_spi_arbiter.cpp", FilePath="/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp", Line=50
+OpenDocument="utils.hpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/utils.hpp", Line=72
+OpenDocument="low_level.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/low_level.cpp", Line=12
+OpenDocument="utils.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/utils.cpp", Line=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=711, h=652, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=711, h=529, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=903, h=713, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Memory 1", DockArea=BOTTOM, x=1, y=0, w=717, h=332, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x0
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=903, h=927, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=3117, h=332, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=711, h=453, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=485, h=757, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=BOTTOM, x=2, y=0, w=593, h=850, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=485, h=181, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=1037, h=182, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=1037, h=944, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=796, h=850, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=2439, h=850, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="193;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="469;-115", CodeGraphLegendShown=0, CodeGraphLegendPosition="392;0"
+OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=485, h=182, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
-TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;538]
-TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;224;784]
+TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;672]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;129;798]
 TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[362;196;364;140;182;135]
+TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[442;126;100;100;1750]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" hall_state_debug";" pos_estimate_debug";" vel_estimate_debug";" debug_IA";" debug_IB";" debug_IC";" debug_torque"], ColWidths=[100;100;100;100;100;100;100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[294;100;100;210;224;114;141;161;168]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Task List", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Name";"Run Count";"Priority";"Status";"Timeout";"Stack Info";"ID";"Mutex Count";"Notified Value";"Notify State"], ColWidths=[194;53;110;110;36;36;151;110;110;110]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[254;570;98;100;112]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
-TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[275;246;100;1194]
-WatchedExpression="timerA_cnt", Window=Watched Data 1
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[192;109;133;534]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[369;624;192;100;100]
 WatchedExpression="counting_down", Window=Watched Data 1
 WatchedExpression="counting_down_", Window=Watched Data 1
-WatchedExpression="timerA_output_level", Window=Watched Data 1
-WatchedExpression="timerA_compare1", Window=Watched Data 1
 WatchedExpression="irq_counters", Window=Watched Data 1
 WatchedExpression="timestamp_", Window=Watched Data 1
 WatchedExpression="timestamp", Window=Watched Data 1
 WatchedExpression="txmsg", Window=Watched Data 1
 WatchedExpression="axis", Window=Watched Data 1
 WatchedExpression="rxmsg", Window=Watched Data 1
-WatchedExpression="rxfs", DisplayFormat=DISPLAY_FORMAT_HEX, Window=Watched Data 1
-WatchedExpression="fill_level", Window=Watched Data 1
-WatchedExpression="fdcan2_rxf0s", DisplayFormat=DISPLAY_FORMAT_HEX, Window=Watched Data 1
-WatchedExpression="adc1_cr", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
-WatchedExpression="adc1_isr", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
-WatchedExpression="adc3_cr", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
-WatchedExpression="adc3_isr", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
-WatchedExpression="adc4_cr", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
-WatchedExpression="adc4_isr", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
-WatchedExpression="ADCValue", Window=Watched Data 1
+WatchedExpression="header", Window=Watched Data 1
 WatchedExpression="free_level", Window=Watched Data 1
-WatchedExpression="periodics", Window=Watched Data 1
 WatchedExpression="pos_abs_", Window=Watched Data 1
+WatchedExpression="hspi_", Window=Watched Data 1
 WatchedExpression="task", Window=Watched Data 1
 WatchedExpression="task_list_", Window=Watched Data 1
 WatchedExpression="axes", Window=Watched Data 1
+WatchedExpression="zfoc", Window=Watched Data 1
+WatchedExpression="hal_filter", Window=Watched Data 1
+WatchedExpression="subscriptions_", Window=Watched Data 1
+WatchedExpression="raw_val_debug", DisplayFormat=DISPLAY_FORMAT_BINARY, Window=Watched Data 1
+WatchedExpression="spi_error_rate_debug", Window=Watched Data 1

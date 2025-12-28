@@ -38,7 +38,7 @@ bool ZfocCAN::reinit() {
     HAL_FDCAN_Stop(handle_);
     FDCAN_ResetError(handle_);
     return (HAL_FDCAN_Init(handle_) == HAL_OK)
-        && (HAL_FDCAN_ConfigFilter(handle_, &filter_) == HAL_OK)
+        // && (HAL_FDCAN_ConfigFilter(handle_, &filter_) == HAL_OK)
         && (HAL_FDCAN_Start(handle_) == HAL_OK)
         && (HAL_FDCAN_ActivateNotification(handle_, FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO0_FULL | 
             // FDCAN_IT_RX_FIFO1_NEW_MESSAGE | FDCAN_IT_RX_FIFO1_FULL | 
@@ -63,16 +63,16 @@ bool ZfocCAN::start_server(FDCAN_HandleTypeDef* handle, FDCAN_GlobalTypeDef* ins
     handle_->Init.DataSyncJumpWidth = 1;
     handle_->Init.DataTimeSeg1 = 1;
     handle_->Init.DataTimeSeg2 = 1;
-    handle_->Init.StdFiltersNbr = 0;
+    handle_->Init.StdFiltersNbr = 28;
     handle_->Init.ExtFiltersNbr = 0;
     handle_->Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
 
-    filter_.IdType = FDCAN_STANDARD_ID;
-    filter_.FilterIndex = 0;
-    filter_.FilterType = FDCAN_FILTER_RANGE;
-    filter_.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-    filter_.FilterID1 = 0;
-    filter_.FilterID2 = 0;
+    // filter_.IdType = FDCAN_STANDARD_ID;
+    // filter_.FilterIndex = 0;
+    // filter_.FilterType = FDCAN_FILTER_RANGE;
+    // filter_.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+    // filter_.FilterID1 = 0;
+    // filter_.FilterID2 = 0;
     if (!reinit()) {
         return false;
     }
@@ -103,7 +103,7 @@ void ZfocCAN::can_server_thread() {
             }
 
             process_rx_fifo(FDCAN_RX_FIFO0);
-            // process_rx_fifo(FDCAN_RX_FIFO1);
+            process_rx_fifo(FDCAN_RX_FIFO1);
             HAL_FDCAN_ActivateNotification(handle_, FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO1_NEW_MESSAGE | FDCAN_IT_TX_FIFO_EMPTY, 0);
 
             // wait at least 1ms to prevent busy-spin on failed sends
@@ -154,7 +154,7 @@ void ZfocCAN::process_rx_fifo(uint32_t fifo) {
 
         // Find the triggered subscription item based on header.FilterMatchIndex
         auto it = std::find_if(subscriptions_.begin(), subscriptions_.end(), [&](auto& s) {
-            size_t current_idx = (s.fifo == 0 ? fifo0_idx : fifo1_idx)++;
+            size_t current_idx = (s.fifo == FDCAN_RX_FIFO0 ? fifo0_idx : fifo1_idx)++;
             return (header.FilterIndex == current_idx) && (s.fifo == fifo);
         });
 
@@ -213,11 +213,8 @@ bool ZfocCAN::subscribe(const MsgIdFilterSpecs& filter, on_can_message_cb_t call
     }
 
     bool is_extended = filter.id.index() == 1;
-    uint32_t id = is_extended ?
-                  ((std::get<1>(filter.id) << 3) | (1 << 2)) :
-                  (std::get<0>(filter.id) << 21);
-    uint32_t mask = (is_extended ? (filter.mask << 3) : (filter.mask << 21))
-                  | (1 << 2); // care about the is_extended bit
+    uint32_t id = is_extended ? (std::get<1>(filter.id) & 0x1FFFFFFF) : (std::get<0>(filter.id) & 0x7FF);
+    uint32_t mask = is_extended ? (filter.mask & 0x1FFFFFFF) : (filter.mask & 0x7FF);
 
     FDCAN_FilterTypeDef hal_filter;
     hal_filter.IdType = is_extended ? FDCAN_EXTENDED_ID : FDCAN_STANDARD_ID;
@@ -263,9 +260,17 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         HAL_FDCAN_DeactivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_FULL);
         osSemaphoreRelease(sem_can);
     }
-    
 }
-
+void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs) {
+    if (!(RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE)) {
+        HAL_FDCAN_DeactivateNotification(hfdcan, FDCAN_IT_RX_FIFO1_NEW_MESSAGE);
+        osSemaphoreRelease(sem_can);
+    } else if (RxFifo1ITs & FDCAN_IT_RX_FIFO1_FULL) {
+        // FIFO full - should never happen with our low traffic, but just in case
+        HAL_FDCAN_DeactivateNotification(hfdcan, FDCAN_IT_RX_FIFO1_FULL);
+        osSemaphoreRelease(sem_can);
+    }
+}
 void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *hfdcan) {
     //HAL_CAN_ResetError(hcan);
 }
