@@ -123,7 +123,10 @@ public:
     bool abs_spi_start_transaction();
     void abs_spi_cb(bool success);
     void abs_spi_cs_pin_init();
+    static bool even_parity16(uint16_t value);
+    static uint16_t as5047p_read_angle_cmd();
     bool abs_spi_pos_updated_ = false;
+    bool as5047p_pipeline_valid_ = false;
     Mode mode_ = MODE_HALL;
     Stm32Gpio abs_spi_cs_gpio_;
     uint32_t abs_spi_cr1;

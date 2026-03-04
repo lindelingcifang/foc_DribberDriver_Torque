@@ -146,6 +146,7 @@ public:
         enum Mode {
             MODE_HALL                        = 1,
             MODE_SPI_ABS_MT6701              = 0x100,
+            MODE_SPI_ABS_AS5047P             = 0x101,
         };
     };
     class TrapezoidalTrajectoryIntf {

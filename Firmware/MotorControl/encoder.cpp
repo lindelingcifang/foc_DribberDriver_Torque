@@ -13,6 +13,15 @@ float spi_error_rate_debug = 0.0f;
 float phase_debug = 0.0f;
 int hall_state_debug = 0;
 
+static constexpr uint16_t AS5047P_REG_ANGLECOM = 0x3FFFU;
+static constexpr uint16_t AS5047P_REG_ERRFL    = 0x0001U;
+static constexpr uint16_t AS5047P_REG_PROG     = 0x0003U;
+static constexpr uint16_t AS5047P_REG_DIAAGC   = 0x3FFCU;
+static constexpr uint16_t AS5047P_CMD_READ_BIT = 0x4000U;
+static constexpr uint16_t AS5047P_PARITY_BIT   = 0x8000U;
+static constexpr uint16_t AS5047P_DATA_MASK    = 0x3FFFU;
+static constexpr uint16_t AS5047P_EF_MASK      = 0x4000U;
+
 Encoder::Encoder(Stm32Gpio hallA_gpio, Stm32Gpio hallB_gpio, Stm32Gpio hallC_gpio,
                 Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio,
                 Mode mode) :
@@ -32,6 +41,9 @@ bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
             break;
         case MODE_SPI_ABS_MT6701:
             config_.cpr = (1 << 13);
+            break;
+        case MODE_SPI_ABS_AS5047P:
+            config_.cpr = (1 << 14);
             break;
         default:
             set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
@@ -65,6 +77,20 @@ void Encoder::setup() {
         .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
         .CRCPolynomial = 10,
     };
+
+    switch (mode_) {
+        case MODE_SPI_ABS_MT6701:
+            abs_spi_dma_tx_[0] = 0xFFFFU;
+            break;
+        case MODE_SPI_ABS_AS5047P:
+            spi_task_.config.CLKPolarity = SPI_POLARITY_LOW;
+            spi_task_.config.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+            abs_spi_dma_tx_[0] = as5047p_read_angle_cmd();
+            as5047p_pipeline_valid_ = false;
+            break;
+        default:
+            break;
+    }
 
     if(mode_ & MODE_FLAG_ABS){
         if (axis_->controller_.config_.anticogging.pre_calibrated) {
@@ -433,6 +459,10 @@ void Encoder::sample_now() {
             abs_spi_start_transaction();
             // Do nothing
         } break;
+        case MODE_SPI_ABS_AS5047P: {
+            abs_spi_start_transaction();
+            // Do nothing
+        } break;
         default: {
            set_error(ERROR_UNSUPPORTED_ENCODER_MODE);
         } break;
@@ -460,6 +490,24 @@ void Encoder::decode_hall_samples() {
     if (axis_->axis_num_ == 0) {
         hall_state_debug = hall_state_;
     }
+}
+
+bool Encoder::even_parity16(uint16_t value) {
+    bool parity = false;
+    while (value != 0U) {
+        parity = !parity;
+        value &= (uint16_t)(value - 1U);
+    }
+    return parity;
+}
+
+uint16_t Encoder::as5047p_read_angle_cmd() {
+    uint16_t cmd = (uint16_t)((AS5047P_REG_ANGLECOM & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
+    // uint16_t cmd = (uint16_t)((AS5047P_REG_DIAAGC & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
+    if (even_parity16(cmd)) {
+        cmd |= AS5047P_PARITY_BIT;
+    }
+    return cmd;
 }
 
 bool Encoder::abs_spi_start_transaction() {
@@ -497,6 +545,26 @@ void Encoder::abs_spi_cb(bool success) {
                 goto done;
             }
             pos = (rawVal >> 2) & 0x1FFF; // 14 bit position data
+        } break;
+
+        case MODE_SPI_ABS_AS5047P: {
+            uint16_t frame = abs_spi_dma_rx_[0];
+            raw_val_debug = frame;
+
+            if (!as5047p_pipeline_valid_) {
+                as5047p_pipeline_valid_ = true;
+                goto done;
+            }
+
+            if (even_parity16(frame)) {
+                goto done;
+            }
+
+            if ((frame & AS5047P_EF_MASK) != 0U) {
+                goto done;
+            }
+
+            pos = frame & AS5047P_DATA_MASK;
         } break;
 
         default: {
@@ -607,7 +675,8 @@ bool Encoder::update() {
             }
         } break;
 
-        case MODE_SPI_ABS_MT6701: {
+        case MODE_SPI_ABS_MT6701:
+        case MODE_SPI_ABS_AS5047P: {
             if (abs_spi_pos_updated_ == false) {
                 // Low pass filter the error
                 spi_error_rate_ += current_meas_period * (1.0f - spi_error_rate_);

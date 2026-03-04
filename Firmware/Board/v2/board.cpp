@@ -50,7 +50,7 @@ Encoder encoders[AXIS_COUNT] = {
         {GPIOC, GPIO_PIN_15}, // hallC
         &spi1_arbiter,
         {GPIOA, GPIO_PIN_3}, // ncs_gpio
-        Encoder::MODE_SPI_ABS_MT6701
+        Encoder::MODE_SPI_ABS_AS5047P
     },
     {
         {GPIOB, GPIO_PIN_6}, // hallA
