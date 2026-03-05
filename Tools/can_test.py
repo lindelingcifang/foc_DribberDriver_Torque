@@ -115,7 +115,7 @@ class ZFOCDriver:
         self.is_extended = is_extended
         try:
             # socketcan不需要在这里设置bitrate，应该在系统层面配置
-            self.bus = can.interface.Bus(channel=channel, bustype=bustype)
+            self.bus = can.interface.Bus(channel=channel, interface=bustype)
             self.connected = True
         except Exception as e:
             print(f"无法连接到CAN总线: {e}")
@@ -686,8 +686,8 @@ def main():
     parser.add_argument('-c', '--channel', default='can0', help='CAN接口名称 (默认: can0)')
     parser.add_argument('-n', '--node-id', type=lambda x: int(x, 0), default=0x00, 
                         help='节点ID (默认: 0x01, 支持十进制或0x十六进制)')
-    parser.add_argument('-b', '--bitrate', type=int, default=500000, 
-                        help='比特率 (默认: 500000)')
+    parser.add_argument('-b', '--bitrate', type=int, default=1000000, 
+                        help='比特率')
     parser.add_argument('-e', '--extended', action='store_true', 
                         help='使用扩展ID模式')
     

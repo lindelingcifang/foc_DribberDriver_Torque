@@ -14,6 +14,7 @@ float phase_debug = 0.0f;
 int hall_state_debug = 0;
 
 static constexpr uint16_t AS5047P_REG_ANGLECOM = 0x3FFFU;
+static constexpr uint16_t AS5047P_REG_ANGLEUNC = 0x3FFEU;
 static constexpr uint16_t AS5047P_REG_ERRFL    = 0x0001U;
 static constexpr uint16_t AS5047P_REG_PROG     = 0x0003U;
 static constexpr uint16_t AS5047P_REG_DIAAGC   = 0x3FFCU;
@@ -81,12 +82,13 @@ void Encoder::setup() {
     switch (mode_) {
         case MODE_SPI_ABS_MT6701:
             abs_spi_dma_tx_[0] = 0xFFFFU;
+            abs_spi_is_discontinuous_ = false;
             break;
         case MODE_SPI_ABS_AS5047P:
             spi_task_.config.CLKPolarity = SPI_POLARITY_LOW;
             spi_task_.config.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
-            abs_spi_dma_tx_[0] = as5047p_read_angle_cmd();
-            as5047p_pipeline_valid_ = false;
+            as5047p_read_angle_cmd(abs_spi_dma_tx_);
+            abs_spi_is_discontinuous_ = true;
             break;
         default:
             break;
@@ -501,13 +503,13 @@ bool Encoder::even_parity16(uint16_t value) {
     return parity;
 }
 
-uint16_t Encoder::as5047p_read_angle_cmd() {
-    uint16_t cmd = (uint16_t)((AS5047P_REG_ANGLECOM & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
-    // uint16_t cmd = (uint16_t)((AS5047P_REG_DIAAGC & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
+void Encoder::as5047p_read_angle_cmd(uint16_t *data) {
+    uint16_t cmd = (uint16_t)((AS5047P_REG_ANGLEUNC & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
+    // uint16_t cmd = (uint16_t)((AS5047P_REG_ERRFL & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
     if (even_parity16(cmd)) {
         cmd |= AS5047P_PARITY_BIT;
     }
-    return cmd;
+    data[0] = cmd;
 }
 
 bool Encoder::abs_spi_start_transaction() {
@@ -520,7 +522,7 @@ bool Encoder::abs_spi_start_transaction() {
             spi_task_.on_complete = [](void* ctx, bool success) { ((Encoder*)ctx)->abs_spi_cb(success); };
             spi_task_.on_complete_ctx = this;
             spi_task_.next = nullptr;
-            
+            spi_task_.is_discontinuous = abs_spi_is_discontinuous_;
             spi_arbiter_->transfer_async(&spi_task_);
         } else {
             return false;
@@ -550,11 +552,6 @@ void Encoder::abs_spi_cb(bool success) {
         case MODE_SPI_ABS_AS5047P: {
             uint16_t frame = abs_spi_dma_rx_[0];
             raw_val_debug = frame;
-
-            if (!as5047p_pipeline_valid_) {
-                as5047p_pipeline_valid_ = true;
-                goto done;
-            }
 
             if (even_parity16(frame)) {
                 goto done;

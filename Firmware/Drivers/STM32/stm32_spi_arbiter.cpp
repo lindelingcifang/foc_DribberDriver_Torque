@@ -45,6 +45,20 @@ bool Stm32SpiArbiter::start() {
     if (hspi_->hdmatx->State != HAL_DMA_STATE_READY || hspi_->hdmarx->State != HAL_DMA_STATE_READY) {
         // This can happen if the DMA or interrupt priorities are not configured properly.
         status = HAL_BUSY;
+        goto done;
+    }
+
+    if (task.is_discontinuous){
+        status = HAL_SPI_Transmit(hspi_, (uint8_t*)task.tx_buf, task.length, 1);
+        if (status != HAL_OK) {
+            goto done;
+        }
+        task.ncs_gpio.write(true);
+        for (size_t i = 0; i < 10; i++) {
+            __NOP();
+        }
+        task.ncs_gpio.write(false);
+        status = HAL_SPI_Receive_DMA(hspi_, task.rx_buf, task.length);
     } else if (task.tx_buf && task.rx_buf) {
         status = HAL_SPI_TransmitReceive_DMA(hspi_, (uint8_t*)task.tx_buf, task.rx_buf, task.length);
     } else if (task.tx_buf) {
@@ -53,6 +67,7 @@ bool Stm32SpiArbiter::start() {
         status = HAL_SPI_Receive_DMA(hspi_, task.rx_buf, task.length);
     }
 
+done:
     if (status != HAL_OK) {
         task.ncs_gpio.write(true);
     }

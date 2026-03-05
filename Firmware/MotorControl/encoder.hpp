@@ -10,8 +10,6 @@ class Encoder;
 #include <stm32_uart.hpp>
 #include <stm32_spi_arbiter.hpp>
 
-#define ENCODER_UART_BAUDRATE 115200
-
 class Encoder : public ZfocIntf::EncoderIntf {
 public:
     static constexpr uint32_t MODE_FLAG_ABS = 0x100;
@@ -124,13 +122,11 @@ public:
     void abs_spi_cb(bool success);
     void abs_spi_cs_pin_init();
     static bool even_parity16(uint16_t value);
-    static uint16_t as5047p_read_angle_cmd();
+    static void as5047p_read_angle_cmd(uint16_t *data);
     bool abs_spi_pos_updated_ = false;
-    bool as5047p_pipeline_valid_ = false;
     Mode mode_ = MODE_HALL;
     Stm32Gpio abs_spi_cs_gpio_;
-    uint32_t abs_spi_cr1;
-    uint32_t abs_spi_cr2;
+    bool abs_spi_is_discontinuous_ = true; // if true, this means an impulse on CSn is required between SPI transmission and reception
     uint16_t abs_spi_dma_tx_[1] = {0xFFFF};
     uint16_t abs_spi_dma_rx_[1];
     Stm32SpiArbiter::SpiTask spi_task_;

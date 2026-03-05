@@ -13,6 +13,7 @@ public:
         const uint8_t* tx_buf;
         uint8_t* rx_buf;
         size_t length;
+        bool is_discontinuous;
         void (*on_complete)(void*, bool);
         void* on_complete_ctx;
         bool is_in_use = false;
