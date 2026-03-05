@@ -140,11 +140,11 @@ public:
             ERROR_UNSUPPORTED_ENCODER_MODE   = 0x00000008,
             ERROR_ILLEGAL_HALL_STATE         = 0x00000010,
             ERROR_INDEX_NOT_FOUND_YET        = 0x00000020,
-            ERROR_ABS_SPI_COM_FAIL          = 0x00000040,
+            ERROR_ABS_SPI_COM_FAIL           = 0x00000040,
             ERROR_HALL_NOT_CALIBRATED_YET    = 0x00000200,
         };
         enum Mode {
-            MODE_HALL                        = 1,
+            MODE_DISABLED                    = 0,
             MODE_SPI_ABS_MT6701              = 0x100,
             MODE_SPI_ABS_AS5047P             = 0x101,
         };
@@ -190,12 +190,10 @@ public:
         STREAM_PROTOCOL_TYPE_STDOUT      = 2,
         STREAM_PROTOCOL_TYPE_ASCII_AND_STDOUT = 3,
     };
-    virtual float get_adc_voltage(uint32_t gpio) = 0;
     virtual bool save_configuration() = 0;
     virtual void erase_configuration() = 0;
     virtual void reboot() = 0;
     virtual uint32_t get_interrupt_status(int32_t irqn) = 0;
-    virtual uint32_t get_gpio_states() = 0;
     virtual void clear_errors() = 0;
 };
 

@@ -144,9 +144,6 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
         case MSG_SET_VEL_GAINS:
             set_vel_gains_callback(axis, msg);
             break;
-        case MSG_GET_ADC_VOLTAGE:
-            get_adc_voltage_callback(axis, msg);
-            break;
         case MSG_GET_CONTROLLER_ERROR:
             get_controller_error_callback(axis);
             break;
@@ -328,24 +325,6 @@ bool CANSimple::get_bus_voltage_current_callback(const Axis& axis) {
     can_setSignal<float>(txmsg, ibus_, 32, 32, true);
 
     return canbus_->send_message(txmsg);
-}
-
-bool CANSimple::get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg) {
-    can_Message_t txmsg;
-
-    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_GET_ADC_VOLTAGE;
-    txmsg.isExt = axis.config_.can.is_extended;
-    txmsg.len = 8;
-
-    auto gpio_num = can_getSignal<uint8_t>(msg, 0, 8, true);
-    if (gpio_num < GPIO_COUNT) {
-        auto voltage = get_adc_voltage(get_gpio(gpio_num));
-        can_setSignal<float>(txmsg, voltage, 0, 32, true);
-        return canbus_->send_message(txmsg);
-    } else {
-        return false;
-    }
 }
 
 void CANSimple::clear_errors_callback(Axis& axis, const can_Message_t& msg) {

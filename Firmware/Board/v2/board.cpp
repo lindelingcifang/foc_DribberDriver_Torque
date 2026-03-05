@@ -45,20 +45,14 @@ Motor motors[AXIS_COUNT] = {
 
 Encoder encoders[AXIS_COUNT] = {
     {
-        {GPIOB, GPIO_PIN_10}, // hallA
-        {GPIOB, GPIO_PIN_2}, // hallB
-        {GPIOC, GPIO_PIN_15}, // hallC
         &spi1_arbiter,
         {GPIOA, GPIO_PIN_3}, // ncs_gpio
         Encoder::MODE_SPI_ABS_AS5047P
     },
     {
-        {GPIOB, GPIO_PIN_6}, // hallA
-        {GPIOB, GPIO_PIN_7}, // hallB
-        {GPIOC, GPIO_PIN_14}, // hallC
         &spi1_arbiter,
         {GPIOA, GPIO_PIN_4}, // ncs_gpio
-        Encoder::MODE_HALL
+        Encoder::MODE_DISABLED
     }
 };
 
@@ -86,20 +80,6 @@ std::array<Axis, AXIS_COUNT> axes = {
     }
 };
 
-Stm32Gpio gpios[] = {
-    {GPIOA, GPIO_PIN_1}, // USART2_DE
-    {GPIOA, GPIO_PIN_2}, // USART2_TX
-    {GPIOA, GPIO_PIN_3}, // USART2_RX
-    {GPIOA, GPIO_PIN_15}, // ENC0_HALLA
-    {GPIOB, GPIO_PIN_3}, // CANB_RX
-    {GPIOB, GPIO_PIN_4}, // CANB_TX
-    {GPIOB, GPIO_PIN_5}, // CANA_RX
-    {GPIOB, GPIO_PIN_6}, // CANA_TX
-    {GPIOB, GPIO_PIN_8}, // ENC0_HALLB
-    {GPIOB, GPIO_PIN_9}, // ENC0_HALLC
-};
-
-
 // TODO: Baord version check is missing due to lack of otp area
 
 void system_init() {
@@ -114,11 +94,6 @@ bool board_init() {
     // Disable default dual bank
     // HAL_FLASH_OB_Unlock();
     // HAL_FLASHEx_OB_DBankConfig(OB_DBANK_128_BITS);
-
-    // Enable voltage reference buffer
-    // HAL_SYSCFG_VREFBUF_VoltageScalingConfig(SYSCFG_VREFBUF_VOLTAGE_SCALE2);
-    // HAL_SYSCFG_VREFBUF_HighImpedanceConfig(SYSCFG_VREFBUF_HIGH_IMPEDANCE_DISABLE);
-    // HAL_SYSCFG_EnableVREFBUF();
 
     // Initialize all configured peripherals
     MX_GPIO_Init();
@@ -141,26 +116,6 @@ bool board_init() {
 
     HAL_NVIC_SetPriority(TIM8_UP_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM8_UP_IRQn);
-
-    if (zfoc.config_.enable_can_a) {
-        // The CAN initialization will (and must) init its own GPIOs before the
-        // GPIO modes are initialized. Therefore we ensure that the later GPIO
-        // mode initialization won't override the CAN mode.
-        if (zfoc.config_.gpio_modes[6] != ZfocIntf::GPIO_MODE_CAN_A || zfoc.config_.gpio_modes[7] != ZfocIntf::GPIO_MODE_CAN_A) {
-            zfoc.misconfigured_ = true;
-        }
-    }
-    if (zfoc.config_.enable_can_b) {
-        // The CAN initialization will (and must) init its own GPIOs before the
-        // GPIO modes are initialized. Therefore we ensure that the later GPIO
-        // mode initialization won't override the CAN mode.
-        if (zfoc.config_.gpio_modes[4] != ZfocIntf::GPIO_MODE_CAN_B || zfoc.config_.gpio_modes[5] != ZfocIntf::GPIO_MODE_CAN_B) {
-            zfoc.misconfigured_ = true;
-        }
-    }
-
-    // Ensure that debug halting of the core doesn't leave the motor PWM running
-    __HAL_DBGMCU_FREEZE_HRTIM1();
 
     return true;
 }

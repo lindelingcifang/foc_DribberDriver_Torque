@@ -346,14 +346,7 @@ uint32_t Zfoc::get_interrupt_status(int32_t irqn) {
     return priority | ((counter & 0x7ffffff) << 8) | (is_enabled ? 0x80000000 : 0);
 }
 
-uint32_t Zfoc::get_gpio_states() {
-    // TODO: get values that were sampled synchronously with the control loop
-    uint32_t val = 0;
-    for (size_t i = 0; i < GPIO_COUNT; ++i) {
-        val |= ((gpios[i].read() ? 1UL : 0UL) << i);
-    }
-    return val;
-}
+
 
 /**
  * @brief Main thread started from main().

@@ -61,7 +61,6 @@ class CANSimple {
     bool get_iq_callback(const Axis& axis);
     bool get_bus_voltage_current_callback(const Axis& axis);
     // msg.rtr bit must NOT be set
-    bool get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg);
 
     // Set functions
     static void set_axis_nodeid_callback(Axis& axis, const can_Message_t& msg);

@@ -27,18 +27,6 @@
 
 #define DEFAULT_MIN_DC_VOLTAGE 0.0f
 
-#define DEFAULT_GPIO_MODES \
-    ZfocIntf::GPIO_MODE_DIGITAL,          /* GPIO0  */ \
-    ZfocIntf::GPIO_MODE_UART,             /* GPIO1  */ \
-    ZfocIntf::GPIO_MODE_UART,             /* GPIO2  */ \
-    ZfocIntf::GPIO_MODE_ENC,              /* GPIO3  */ \
-    ZfocIntf::GPIO_MODE_CAN_B,              /* GPIO4  */ \
-    ZfocIntf::GPIO_MODE_CAN_B,              /* GPIO5  */ \
-    ZfocIntf::GPIO_MODE_CAN_A,              /* GPIO6  */ \
-    ZfocIntf::GPIO_MODE_CAN_A,              /* GPIO7  */ \
-    ZfocIntf::GPIO_MODE_ENC,              /* GPIO8  */ \
-    ZfocIntf::GPIO_MODE_DIGITAL,          /* GPIO9  */ 
-
 #define TIM_TIME_BASE TIM17
 
 // Run control loop at the same frequency as the current measurement
@@ -59,7 +47,6 @@
 extern std::array<Axis, AXIS_COUNT> axes;
 extern Motor motors[AXIS_COUNT];
 extern Encoder encoders[AXIS_COUNT];
-extern Stm32Gpio gpios[GPIO_COUNT];
 
 struct GpioFunction { int mode = 0; uint8_t alternate_function = 0xff; };
 extern std::array<GpioFunction, 3> alternate_functions[GPIO_COUNT];

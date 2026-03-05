@@ -396,8 +396,6 @@ void Axis::run_state_machine_loop() {
                 task_chain_[pos++] = AXIS_STATE_IDLE;
             } else if (requested_state_ == AXIS_STATE_FULL_CALIBRATION_SEQUENCE) {
                 task_chain_[pos++] = AXIS_STATE_MOTOR_CALIBRATION;
-                if (encoder_.config_.mode == ZfocIntf::EncoderIntf::MODE_HALL)
-                    task_chain_[pos++] = AXIS_STATE_ENCODER_HALL_POLARITY_CALIBRATION;
                 task_chain_[pos++] = AXIS_STATE_ENCODER_OFFSET_CALIBRATION;
                 task_chain_[pos++] = AXIS_STATE_IDLE;
             } else if (requested_state_ != AXIS_STATE_UNDEFINED) {
@@ -436,25 +434,6 @@ void Axis::run_state_machine_loop() {
                 // Help facilitate encoder.is_ready without reboot
                 if (status)
                     encoder_.apply_config(motor_.config_.motor_type);
-            } break;
-
-            case AXIS_STATE_ENCODER_HALL_POLARITY_CALIBRATION: {
-                if (!motor_.is_calibrated_)
-                    goto invalid_state_label;
-
-                status = encoder_.run_hall_polarity_calibration();
-            } break;
-
-            case AXIS_STATE_ENCODER_HALL_PHASE_CALIBRATION: {
-                if (!motor_.is_calibrated_)
-                    goto invalid_state_label;
-
-                if (!encoder_.config_.hall_polarity_calibrated) {
-                    encoder_.set_error(ZfocIntf::EncoderIntf::ERROR_HALL_NOT_CALIBRATED_YET);
-                    goto invalid_state_label;
-                }
-
-                status = encoder_.run_hall_phase_calibration();
             } break;
 
             // Homing is currently disabled because it requires endstops

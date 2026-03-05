@@ -45,9 +45,6 @@ typedef struct {
 
 // @brief general user configurable board configuration
 struct BoardConfig_t {
-    ZfocIntf::GpioMode gpio_modes[GPIO_COUNT] = {
-        DEFAULT_GPIO_MODES
-    };
 
     bool enable_uart = true;
     uint32_t uart_baudrate = 115200;
@@ -130,10 +127,6 @@ extern const unsigned char fw_version_revision_;
 extern const unsigned char fw_version_unreleased_;
 }
 
-static Stm32Gpio get_gpio(size_t gpio_num) {
-    return (gpio_num < GPIO_COUNT) ? gpios[gpio_num] : GPIO_COUNT ? gpios[0] : Stm32Gpio::none;
-}
-
 // general system functions defined in main.cpp
 class Zfoc : public ZfocIntf {
 public:
@@ -141,10 +134,6 @@ public:
     void erase_configuration();
     void reboot() { NVIC_SystemReset(); }
     void clear_errors();
-
-    float get_adc_voltage(uint32_t gpio) override {
-        return ::get_adc_voltage(get_gpio(gpio));
-    }
 
     bool any_error();
 
@@ -155,7 +144,6 @@ public:
     Axis& get_axis(int num) { return axes[num]; }
 
     uint32_t get_interrupt_status(int32_t irqn);
-    uint32_t get_gpio_states();
     void disarm_with_error(Error error);
 
     Error error_ = ERROR_NONE;
