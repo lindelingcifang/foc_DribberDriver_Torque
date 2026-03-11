@@ -26,7 +26,7 @@ public:
         MotorType motor_type = MOTOR_TYPE_HIGH_CURRENT;
         // Read out max_allowed_current to see max supported value for current_lim.
         // float current_lim = 70.0f; //[A]
-        float current_lim = 9.58f;          //[A]
+        float current_lim = 10.0f;          //[A]
         float current_lim_margin = 8.3f;    // Maximum violation of current_lim
         float torque_lim = std::numeric_limits<float>::infinity();           //[Nm]. 
         // Value used to compute shunt amplifier gains
@@ -115,7 +115,7 @@ public:
     InputPort<float> torque_setpoint_src_; // Usually points to the Controller object's output
     InputPort<float> phase_vel_src_; // Usually points to the Encoder object's output
 
-    float direction_ = 0.0f; // if -1 then positive torque is converted to negative Iq
+    float direction_ = -1.0f; // if -1 then positive torque is converted to negative Iq
     OutputPort<float2D> Vdq_setpoint_ = {{0.0f, 0.0f}}; // fed to the FOC
     OutputPort<float2D> Idq_setpoint_ = {{0.0f, 0.0f}}; // fed to the FOC
     

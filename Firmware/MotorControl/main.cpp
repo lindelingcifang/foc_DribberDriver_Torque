@@ -352,9 +352,6 @@ uint32_t Zfoc::get_interrupt_status(int32_t irqn) {
  * @brief Main thread started from main().
  */
 static void rtos_main(const void*) {
-    // Start ADC for temperature measurements and user measurements
-    // start_general_purpose_adc();
-
     //osDelay(100);
     // Init communications (this requires the axis objects to be constructed)
     init_communication();

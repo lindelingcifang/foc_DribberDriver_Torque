@@ -85,10 +85,11 @@ public:
      */
     void on_complete();
 
+    SPI_HandleTypeDef* hspi_;
 private:
     bool start();
     
-    SPI_HandleTypeDef* hspi_;
+    
     SpiTask* task_list_ = nullptr;
 };
 

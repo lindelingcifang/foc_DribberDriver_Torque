@@ -48,18 +48,7 @@ bool Stm32SpiArbiter::start() {
         goto done;
     }
 
-    if (task.is_discontinuous){
-        status = HAL_SPI_Transmit(hspi_, (uint8_t*)task.tx_buf, task.length, 1);
-        if (status != HAL_OK) {
-            goto done;
-        }
-        task.ncs_gpio.write(true);
-        for (size_t i = 0; i < 10; i++) {
-            __NOP();
-        }
-        task.ncs_gpio.write(false);
-        status = HAL_SPI_Receive_DMA(hspi_, task.rx_buf, task.length);
-    } else if (task.tx_buf && task.rx_buf) {
+    if (task.tx_buf && task.rx_buf) {
         status = HAL_SPI_TransmitReceive_DMA(hspi_, (uint8_t*)task.tx_buf, task.rx_buf, task.length);
     } else if (task.tx_buf) {
         status = HAL_SPI_Transmit_DMA(hspi_, (uint8_t*)task.tx_buf, task.length);

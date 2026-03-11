@@ -2,6 +2,7 @@
 #include "zfoc_main.h"
 #include <Drivers/STM32/stm32_system.h>
 #include <bitset>
+#include "stm32g4xx_ll_spi.h"
 
 // debug variables
 uint32_t pos_abs_debug = 0;
@@ -76,7 +77,7 @@ void Encoder::setup() {
             spi_task_.config.CLKPolarity = SPI_POLARITY_LOW;
             spi_task_.config.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
             as5047p_read_angle_cmd(abs_spi_dma_tx_);
-            abs_spi_is_discontinuous_ = true;
+            abs_spi_is_discontinuous_ = false;
             break;
         default:
             break;
@@ -377,14 +378,29 @@ void Encoder::abs_spi_cb(bool success) {
         } break;
 
         case MODE_SPI_ABS_AS5047P: {
+
             uint16_t frame = abs_spi_dma_rx_[0];
+
             raw_val_debug = frame;
+
+            if (as5047p_recovering_) {
+                as5047p_recovering_ = false;
+                as5047p_read_angle_cmd(abs_spi_dma_tx_);
+                goto done;
+            }
 
             if (even_parity16(frame)) {
                 goto done;
             }
 
             if ((frame & AS5047P_EF_MASK) != 0U) {
+                // To clear the error flag, request the ERRFL register on the next transaction.
+                uint16_t err_cmd = (uint16_t)((AS5047P_REG_ERRFL & AS5047P_DATA_MASK) | AS5047P_CMD_READ_BIT);
+                if (even_parity16(err_cmd)) {
+                   err_cmd |= AS5047P_PARITY_BIT;
+                }
+                abs_spi_dma_tx_[0] = err_cmd;
+                as5047p_recovering_ = true;
                 goto done;
             }
 

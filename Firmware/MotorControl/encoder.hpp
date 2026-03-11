@@ -100,12 +100,13 @@ public:
     bool abs_spi_pos_updated_ = false;
     Mode mode_ = MODE_SPI_ABS_AS5047P;
     bool abs_spi_is_discontinuous_ = true; // if true, this means an impulse on CSn is required between SPI transmission and reception
+    bool as5047p_recovering_ = false;
     uint16_t abs_spi_dma_tx_[1] = {0xFFFF};
     uint16_t abs_spi_dma_rx_[1];
     Stm32SpiArbiter::SpiTask spi_task_;
 
     constexpr float getCoggingRatio(){
-        return 1.0f / 3600.0f;
+        return 1.0f / 300.0f;
     }
 
 };

@@ -4,25 +4,25 @@
 * This file supports storing and loading persistent configuration based on
 * the STM32 builtin flash memory.
 *
-* The STM32F405xx has 12 flash pages of heterogeneous size. We use the last
-* two pages for configuration data. These pages have a size of 128kB each.
-* Setting any bit in these pages to 0 is always possible, but setting them
-* to 1 requires erasing the whole page.
+* The STM32F405xx has 12 flash sectors of heterogeneous size. We use the last
+* two sectors for configuration data. These pages have a size of 128kB each.
+* Setting any bit in these sectors to 0 is always possible, but setting them
+* to 1 requires erasing the whole sector.
 *
-* We consider each page as an array of 64-bit fields except the first N bytes, which we
+* We consider each sector as an array of 64-bit fields except the first N bytes, which we
 * instead use as an allocation block. The allocation block is a compact bit-field (2 bit per entry)
 * that keeps track of the state of each field (erased, invalid, valid).
 *
-* One page is always considered the valid (read) page and the other one is the
+* One sector is always considered the valid (read) sector and the other one is the
 * target for the next write access: they can be considered to be ping-pong or double buffred.
 *
-* When writing a block of data, instead of always erasing the whole writable page the
+* When writing a block of data, instead of always erasing the whole writable sector the
 * new data is appended in the erased area. This presumably increases flash life span.
-* The writable page is only erased if there is not enough space for the new data.
+* The writable sector is only erased if there is not enough space for the new data.
 *
-* On startup, if there is exactly one page
-* whose last non-erased value has the state "valid" that page is considered
-* the valid page. In any other case the selection is undefined.
+* On startup, if there is exactly one sector
+* whose last non-erased value has the state "valid" that sector is considered
+* the valid sector. In any other case the selection is undefined.
 *
 *
 * To write a new block of data atomically we first mark all associated fields
@@ -34,21 +34,51 @@
 
 #include <string.h>
 
-#if defined(STM32G474xx)
+#if defined(STM32F405xx)
+
+#include <stm32f405xx.h>
+#include <stm32f4xx_hal.h>
+
+// refer to page 75 of datasheet:
+// http://www.st.com/content/ccc/resource/technical/document/reference_manual/3d/6d/5a/66/b4/99/40/d4/DM00031020.pdf/files/DM00031020.pdf/jcr:content/translations/en.DM00031020.pdf
+#define FLASH_SECTOR_A FLASH_SECTOR_10
+#define FLASH_SECTOR_A_BASE (const volatile uint8_t*)0x80C0000UL
+#define FLASH_SECTOR_A_SIZE 0x20000UL
+#define FLASH_SECTOR_B FLASH_SECTOR_11
+#define FLASH_SECTOR_B_BASE (const volatile uint8_t*)0x80E0000UL
+#define FLASH_SECTOR_B_SIZE 0x20000UL
+
+#elif defined(STM32F722xx)
+
+#include <stm32f722xx.h>
+#include <stm32f7xx_hal.h>
+
+// refer to page 68 of datasheet:
+// https://www.st.com/resource/en/reference_manual/dm00305990-stm32f72xxx-and-stm32f73xxx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+#define FLASH_SECTOR_A FLASH_SECTOR_1
+#define FLASH_SECTOR_A_BASE (const volatile uint8_t*)0x8004000UL
+#define FLASH_SECTOR_A_SIZE 0x4000UL
+#define FLASH_SECTOR_B FLASH_SECTOR_2
+#define FLASH_SECTOR_B_BASE (const volatile uint8_t*)0x8008000UL
+#define FLASH_SECTOR_B_SIZE 0x4000UL
+
+#elif defined(STM32G474xx)
 
 #include <stm32g474xx.h>
 #include <stm32g4xx_hal.h>
 
-// refer to page 96 of reference manual
-#define FLASH_PAGE_A 126U
-#define FLASH_PAGE_A_BASE (const volatile uint8_t*)0x807E000UL
-#define FLASH_PAGE_A_SIZE 0x1000UL
-#define FLASH_PAGE_B 127U
-#define FLASH_PAGE_B_BASE (const volatile uint8_t*)0x807F000UL
-#define FLASH_PAGE_B_SIZE 0x1000UL
+// STM32G474 has 2KB pages. Flash is divided into 2 banks in dual-bank mode.
+// We use pages 112-119 (16KB) and pages 120-127 (16KB) in Bank 2.
+// Assuming Bank 2 starts at 0x08040000.
+#define FLASH_SECTOR_A 112
+#define FLASH_SECTOR_A_BASE (const volatile uint8_t*)0x08078000UL
+#define FLASH_SECTOR_A_SIZE 0x4000UL
+#define FLASH_SECTOR_B 120
+#define FLASH_SECTOR_B_BASE (const volatile uint8_t*)0x0807C000UL
+#define FLASH_SECTOR_B_SIZE 0x4000UL
 
 #else
-#error "unknown flash page size"
+#error "unknown flash sector size"
 #endif
 
 typedef enum {
@@ -59,30 +89,75 @@ typedef enum {
 
 typedef struct {
     size_t index;               //!< next field to be written to (can be equal to n_data)
-    const uint32_t page_id;   //!< HAL ID of this page
-    const size_t n_data;        //!< number of 64-bit fields in this page
-    const size_t n_reserved;    //!< number of 64-bit fields in this page that are reserved for the allocation table
+    const uint32_t sector_id;   //!< HAL ID of this sector
+    const size_t n_data;        //!< number of 64-bit fields in this sector
+    const size_t n_reserved;    //!< number of 64-bit fields in this sector that are reserved for the allocation table
     const volatile uint8_t* const alloc_table;
     const volatile uint64_t* const data;
-} page_t;
+} sector_t;
 
-page_t pages[] = { {
-    .page_id = FLASH_PAGE_A,
-    .n_data = FLASH_PAGE_A_SIZE >> 3,
-    .n_reserved = (FLASH_PAGE_A_SIZE >> 3) >> 5,
-    .alloc_table = FLASH_PAGE_A_BASE,
-    .data = (uint64_t *)FLASH_PAGE_A_BASE
+#if defined(STM32G474xx)
+sector_t sectors[] = { {
+    .sector_id = FLASH_SECTOR_A,
+    .n_data = FLASH_SECTOR_A_SIZE >> 3,
+    .n_reserved = ((FLASH_SECTOR_A_SIZE >> 3) * 2) / 3,
+    .alloc_table = FLASH_SECTOR_A_BASE,
+    .data = (uint64_t *)FLASH_SECTOR_A_BASE
 }, {
-    .page_id = FLASH_PAGE_B,
-    .n_data = FLASH_PAGE_B_SIZE >> 3,
-    .n_reserved = (FLASH_PAGE_B_SIZE >> 3) >> 5,
-    .alloc_table = FLASH_PAGE_B_BASE,
-    .data = (uint64_t *)FLASH_PAGE_B_BASE
+    .sector_id = FLASH_SECTOR_B,
+    .n_data = FLASH_SECTOR_B_SIZE >> 3,
+    .n_reserved = ((FLASH_SECTOR_B_SIZE >> 3) * 2) / 3,
+    .alloc_table = FLASH_SECTOR_B_BASE,
+    .data = (uint64_t *)FLASH_SECTOR_B_BASE
 }};
 
-uint8_t read_page_; // 0 or 1 to indicate which page to read from and which to write to
-size_t n_staging_area_; // number of 64-bit values that were reserved using NVM_start_write
-size_t n_valid_; // number of 64-bit fields that can be read
+static const uint32_t FLASH_ERR_FLAGS =
+#if defined(FLASH_FLAG_EOP)
+        FLASH_FLAG_EOP |
+#endif
+#if defined(FLASH_FLAG_OPERR)
+        FLASH_FLAG_OPERR |
+#endif
+#if defined(FLASH_FLAG_PROGERR)
+        FLASH_FLAG_PROGERR |
+#endif
+#if defined(FLASH_FLAG_WRPERR)
+        FLASH_FLAG_WRPERR |
+#endif
+#if defined(FLASH_FLAG_PGAERR)
+        FLASH_FLAG_PGAERR |
+#endif
+#if defined(FLASH_FLAG_SIZERR)
+        FLASH_FLAG_SIZERR |
+#endif
+#if defined(FLASH_FLAG_PGSERR)
+        FLASH_FLAG_PGSERR |
+#endif
+#if defined(FLASH_FLAG_MISERR)
+        FLASH_FLAG_MISERR |
+#endif
+#if defined(FLASH_FLAG_FASTERR)
+        FLASH_FLAG_FASTERR |
+#endif
+#if defined(FLASH_FLAG_PGPERR)
+        FLASH_FLAG_PGPERR |
+#endif
+        0;
+
+#else
+sector_t sectors[] = { {
+    .sector_id = FLASH_SECTOR_A,
+    .n_data = FLASH_SECTOR_A_SIZE >> 3,
+    .n_reserved = (FLASH_SECTOR_A_SIZE >> 3) >> 5,
+    .alloc_table = FLASH_SECTOR_A_BASE,
+    .data = (uint64_t *)FLASH_SECTOR_A_BASE
+}, {
+    .sector_id = FLASH_SECTOR_B,
+    .n_data = FLASH_SECTOR_B_SIZE >> 3,
+    .n_reserved = (FLASH_SECTOR_B_SIZE >> 3) >> 5,
+    .alloc_table = FLASH_SECTOR_B_BASE,
+    .data = (uint64_t *)FLASH_SECTOR_B_BASE
+}};
 
 static const uint32_t FLASH_ERR_FLAGS =
 #if defined(FLASH_FLAG_EOP)
@@ -104,30 +179,58 @@ static const uint32_t FLASH_ERR_FLAGS =
         FLASH_FLAG_PGPERR |
 #endif
         0;
+#endif
+
+uint8_t read_sector_; // 0 or 1 to indicate which sector to read from and which to write to
+size_t n_staging_area_; // number of 64-bit values that were reserved using NVM_start_write
+size_t n_valid_; // number of 64-bit fields that can be read
 
 static void HAL_FLASH_ClearError() {
     __HAL_FLASH_CLEAR_FLAG(FLASH_ERR_FLAGS);
 }
 
 
-// @brief Erases a flash page. This sets all bits in the page to 1.
-// The page's current index is reset to the minimum value (n_reserved).
-// @returns 0 on success or a non-zero error code otherwise
-int erase(page_t *page) {
+#if defined(STM32G474xx)
+int erase(sector_t *sector) {
     FLASH_EraseInitTypeDef erase_struct = {
         .TypeErase = FLASH_TYPEERASE_PAGES,
-#if defined(FLASH_OPTR_DBANK)
-        .Banks = FLASH_BANK_1, // only used for mass erase
-#endif
-        .Page = page->page_id,
-        .NbPages = 1,
+        .Banks = FLASH_BANK_2,
+        .Page = sector->sector_id,
+        .NbPages = 8
     };
     HAL_FLASH_Unlock();
     HAL_FLASH_ClearError();
-    uint32_t page_error;
-    if (HAL_FLASHEx_Erase(&erase_struct, &page_error) != HAL_OK)
+    uint32_t sector_error;
+    if (HAL_FLASHEx_Erase(&erase_struct, &sector_error) != HAL_OK)
         goto fail;
-    page->index = page->n_reserved;
+    sector->index = sector->n_reserved;
+
+    HAL_FLASH_Lock();
+    return 0;
+fail:
+    HAL_FLASH_Lock();
+    return HAL_FLASH_GetError(); // non-zero
+}
+#else
+// @brief Erases a flash sector. This sets all bits in the sector to 1.
+// The sector's current index is reset to the minimum value (n_reserved).
+// @returns 0 on success or a non-zero error code otherwise
+int erase(sector_t *sector) {
+    FLASH_EraseInitTypeDef erase_struct = {
+        .TypeErase = FLASH_TYPEERASE_SECTORS,
+#if defined(FLASH_OPTCR_nDBANK)
+        .Banks = 0, // only used for mass erase
+#endif
+        .Sector = sector->sector_id,
+        .NbSectors = 1,
+        .VoltageRange = FLASH_VOLTAGE_RANGE_3
+    };
+    HAL_FLASH_Unlock();
+    HAL_FLASH_ClearError();
+    uint32_t sector_error;
+    if (HAL_FLASHEx_Erase(&erase_struct, &sector_error) != HAL_OK)
+        goto fail;
+    sector->index = sector->n_reserved;
 
     HAL_FLASH_Lock();
     return 0;
@@ -136,119 +239,121 @@ fail:
     //printf("erase failed: %u \r\n", HAL_FLASH_GetError());
     return HAL_FLASH_GetError(); // non-zero
 }
+#endif
 
 
-// @brief Writes states into the allocation table using 64-bit writes
+#if defined(STM32G474xx)
+int set_allocation_state(sector_t *sector, size_t index, size_t count, field_state_t state) {
+    if (index < sector->n_reserved)
+        return -1;
+    if (index + count >= sector->n_data)
+        return -1;
+
+    HAL_FLASH_Unlock();
+    HAL_FLASH_ClearError();
+
+    for (size_t i = 0; i < count; i++) {
+        size_t data_idx = (index + i) - sector->n_reserved;
+        uint64_t *addr;
+        if (state == INVALID) {
+            addr = (uint64_t*)&sector->alloc_table[data_idx * 16];
+        } else if (state == VALID) {
+            addr = (uint64_t*)&sector->alloc_table[data_idx * 16 + 8];
+        } else {
+            continue;
+        }
+
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, (uintptr_t)addr, 0) != HAL_OK)
+            goto fail;
+    }
+
+    HAL_FLASH_Lock();
+    return 0;
+fail:
+    HAL_FLASH_Lock();
+    return HAL_FLASH_GetError();
+}
+
+size_t scan_allocation_table(sector_t *sector, size_t max_index, field_state_t ref_state, field_state_t *state) {
+    for (size_t index = max_index; index > sector->n_reserved; index--) {
+        size_t data_idx = (index - 1) - sector->n_reserved;
+        uint64_t word0 = *(const volatile uint64_t *)&sector->alloc_table[data_idx * 16];
+        uint64_t word1 = *(const volatile uint64_t *)&sector->alloc_table[data_idx * 16 + 8];
+        field_state_t s = ERASED;
+        if (word0 == 0) s = INVALID;
+        if (word1 == 0) s = VALID;
+        
+        if (s != ref_state) {
+            *state = s;
+            return index;
+        }
+    }
+    *state = ref_state;
+    return sector->n_reserved;
+}
+#else
+// @brief Writes states into the allocation table.
 // The write operation goes in the direction of increasing indices.
 // @param state: 11: erased, 10: writing, 00: valid data
 // @returns 0 on success or a non-zero error code otherwise
-int set_allocation_state(page_t *page, size_t index, size_t count, field_state_t state) {
-    if (index < page->n_reserved)
+int set_allocation_state(sector_t *sector, size_t index, size_t count, field_state_t state) {
+    if (index < sector->n_reserved)
         return -1;
-    if (index + count >= page->n_data)
+    if (index + count >= sector->n_data)
         return -1;
 
-    // Expand state to 64-bit value containing 32 states
-    uint64_t states = 0;
-    for (int i = 0; i < 32; i++) {
-        states |= ((uint64_t)state << (i * 2));
+    // expand state to state for 4 values
+    const uint8_t states = (state << 0) | (state << 2) | (state << 4) | (state << 6);
+    
+    // handle unaligned start
+    uint8_t mask = ~(0xff << ((index & 0x3) << 1));
+    count += index & 0x3;
+    index -= index & 0x3;
+
+    HAL_FLASH_Unlock();
+    HAL_FLASH_ClearError();
+
+    // write states
+    for (; count >= 4; count -= 4, index += 4) {
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, (uintptr_t)&sector->alloc_table[index >> 2], states | mask) != HAL_OK)
+            goto fail;
+        mask = 0;
+    }
+
+    // handle unaligned end
+    if (count) {
+        mask |= ~(0xff >> ((4 - count) << 1));
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, (uintptr_t)&sector->alloc_table[index >> 2], states | mask) != HAL_OK)
+            goto fail;
     }
     
-    // Handle unaligned start (at state level, not byte level)
-    size_t start_offset = index % 32;
-    if (start_offset > 0) {
-        // Process partial group at start
-        size_t partial_count = 32 - start_offset;
-        if (partial_count > count) partial_count = count;
-        
-        // Create mask for partial write
-        uint64_t mask = ~((1ULL << (start_offset * 2)) - 1);
-        if (partial_count < 32) {
-            mask &= (1ULL << ((start_offset + partial_count) * 2)) - 1;
-        }
-        
-        // Calculate address (aligned to 8 bytes)
-        size_t byte_index = (index / 4); // 4 states per byte
-        uintptr_t addr = (uintptr_t)&page->alloc_table[byte_index];
-        addr = (addr + 7) & ~7; // Align to 8-byte boundary
-        
-        HAL_FLASH_Unlock();
-        HAL_FLASH_ClearError();
-        
-        // Write partial group
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr, states & mask) != HAL_OK) {
-            HAL_FLASH_Lock();
-            return HAL_FLASH_GetError();
-        }
-        
-        HAL_FLASH_Lock();
-        
-        count -= partial_count;
-        index += partial_count;
-    }
-
-    // Write full 32-state groups
-    while (count >= 32) {
-        size_t byte_index = (index / 4); // 4 states per byte
-        uintptr_t addr = (uintptr_t)&page->alloc_table[byte_index];
-        
-        HAL_FLASH_Unlock();
-        HAL_FLASH_ClearError();
-        
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr, states) != HAL_OK) {
-            HAL_FLASH_Lock();
-            return HAL_FLASH_GetError();
-        }
-        
-        HAL_FLASH_Lock();
-        
-        count -= 32;
-        index += 32;
-    }
-
-    // Handle unaligned end
-    if (count > 0) {
-        // Create mask for partial write
-        uint64_t mask = (1ULL << (count * 2)) - 1;
-        
-        size_t byte_index = (index / 4); // 4 states per byte
-        uintptr_t addr = (uintptr_t)&page->alloc_table[byte_index];
-        addr = (addr + 7) & ~7; // Align to 8-byte boundary
-        
-        HAL_FLASH_Unlock();
-        HAL_FLASH_ClearError();
-        
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr, states & mask) != HAL_OK) {
-            HAL_FLASH_Lock();
-            return HAL_FLASH_GetError();
-        }
-        
-        HAL_FLASH_Lock();
-    }
-    
+    HAL_FLASH_Lock();
     return 0;
+fail:
+    HAL_FLASH_Lock();
+    return HAL_FLASH_GetError(); // non-zero
 }
 
 // @brief Reads the allocation table from behind to determine how many fields match the
 // reference state.
-// @param page: The page on which to perform the search
+// @param sector: The sector on which to perform the search
 // @param max_index: The maximum index that should be considered
 // @param ref_state: The reference state
 // @param state: Set to the first encountered state that is unequal to ref_state.
 //               Set to ref_state if all encountered states are equal to ref_state.
 // @returns The smallest index that points to a field with ref_state.
-//          This value is at least page->n_reserved and at most max_index.
-size_t scan_allocation_table(page_t *page, size_t max_index, field_state_t ref_state, field_state_t *state) {
+//          This value is at least sector->n_reserved and at most max_index.
+size_t scan_allocation_table(sector_t *sector, size_t max_index, field_state_t ref_state, field_state_t *state) {
     const uint8_t ref_states = (ref_state << 0) | (ref_state << 2) | (ref_state << 4) | (ref_state << 6);
     size_t index = (((max_index + 3) >> 2) << 2); // start at the max index but round up to a multiple of 4
     size_t ignore = index - max_index;
     uint8_t states = ref_states;
 
-    //printf("scan from %08x to %08x for %02x\r\n", index, page->n_reserved, ref_states); osDelay(5);
+    //printf("scan from %08x to %08x for %02x\r\n", index, sector->n_reserved, ref_states); osDelay(5);
 
     // read 4 states at a time
-    for (; index >= (page->n_reserved + 4); index -= 4) {
-        states = page->alloc_table[(index - 1) >> 2];
+    for (; index >= (sector->n_reserved + 4); index -= 4) {
+        states = sector->alloc_table[(index - 1) >> 2];
         if (ignore) { // ignore the upper 1, 2 or 3 states if max_index was unaligned
             uint8_t ignore_mask = ~(0xff >> (ignore << 1));
             states = (states & ~ignore_mask) | (ref_states & ignore_mask);
@@ -259,7 +364,7 @@ size_t scan_allocation_table(page_t *page, size_t max_index, field_state_t ref_s
     }
 
     // once we encounterd a byte with any state mismatch determine which of the 4 states it is
-    for (; ((states >> 6) == (ref_states & 0x3)) && (index > page->n_reserved); index--) {
+    for (; ((states >> 6) == (ref_states & 0x3)) && (index > sector->n_reserved); index--) {
         states <<= 2;
     }
     
@@ -267,42 +372,43 @@ size_t scan_allocation_table(page_t *page, size_t max_index, field_state_t ref_s
     //printf("(it's %02x)\r\n", index); osDelay(5);
     return index;
 }
+#endif
 
 // Loads the head of the NVM data.
 // If this function fails subsequent calls to NVM functions (other than NVM_init or NVM_erase)
 // cause undefined behavior.
 // @returns 0 on success or a non-zero error code otherwise
 int NVM_init(void) {
-    field_state_t page0_state, page1_state;
-    pages[0].index = scan_allocation_table(&pages[0], pages[0].n_data,
-                ERASED, &page0_state);
-    pages[1].index = scan_allocation_table(&pages[1], pages[1].n_data,
-                ERASED, &page1_state);
-    //printf("page states: %02x, %02x\r\n", page0_state, page1_state); osDelay(5);
+    field_state_t sector0_state, sector1_state;
+    sectors[0].index = scan_allocation_table(&sectors[0], sectors[0].n_data,
+                ERASED, &sector0_state);
+    sectors[1].index = scan_allocation_table(&sectors[1], sectors[1].n_data,
+                ERASED, &sector1_state);
+    //printf("sector states: %02x, %02x\r\n", sector0_state, sector1_state); osDelay(5);
 
-    // Select valid page on a best effort basis
-    // (in unfortunate cases valid_page might actually point
-    // to an invalid or erased page)
-    read_page_ = 0;
-    if (page1_state == VALID)
-        read_page_ = 1;
+    // Select valid sector on a best effort basis
+    // (in unfortunate cases valid_sector might actually point
+    // to an invalid or erased sector)
+    read_sector_ = 0;
+    if (sector1_state == VALID)
+        read_sector_ = 1;
     
     // count the number of valid fields
-    page_t *read_page = &pages[read_page_];
+    sector_t *read_sector = &sectors[read_sector_];
     uint8_t first_nonvalid_state;
-    size_t min_valid_index = scan_allocation_table(read_page, read_page->index,
+    size_t min_valid_index = scan_allocation_table(read_sector, read_sector->index,
         VALID, &first_nonvalid_state);
-    n_valid_ = read_page->index - min_valid_index;
+    n_valid_ = read_sector->index - min_valid_index;
     
     n_staging_area_ = 0;
 
     int status = 0;
-    /*// bring non-valid pages into a known state
+    /*// bring non-valid sectors into a known state
     this is not absolutely required
-    if (page0_state != VALID)
-        status |= erase(&pages[0]);
-    if (page1_state != VALID)
-        status |= erase(&pages[1]);
+    if (sector0_state != VALID)
+        status |= erase(&sectors[0]);
+    if (sector1_state != VALID)
+        status |= erase(&sectors[1]);
     */
     return status;
 }
@@ -315,13 +421,13 @@ int NVM_init(void) {
 //
 // @returns 0 on success or a non-zero error code otherwise
 int NVM_erase(void) {
-    read_page_ = 0;
-    pages[0].index = pages[0].n_reserved;
-    pages[1].index = pages[1].n_reserved;
+    read_sector_ = 0;
+    sectors[0].index = sectors[0].n_reserved;
+    sectors[1].index = sectors[1].n_reserved;
 
     int state = 0;
-    state |= erase(&pages[0]);
-    state |= erase(&pages[1]);
+    state |= erase(&sectors[0]);
+    state |= erase(&sectors[1]);
     return state;
 }
 
@@ -334,7 +440,7 @@ size_t NVM_get_max_read_length(void) {
 // @brief Returns the maximum length (in bytes) that can passed to NVM_start_write.
 // This holds until NVM_commit is called.
 size_t NVM_get_max_write_length(void) {
-    page_t *target = &pages[1 - read_page_];
+    sector_t *target = &sectors[1 - read_sector_];
     return (target->n_data - target->n_reserved) << 3;
 }
 
@@ -347,8 +453,8 @@ size_t NVM_get_max_write_length(void) {
 int NVM_read(size_t offset, uint8_t *data, size_t length) {
     if (offset + length > (n_valid_ << 3))
         return -1;
-    page_t *read_page = &pages[read_page_];
-    const uint8_t *src_ptr = ((const uint8_t *)&read_page->data[read_page->index - n_valid_]) + offset;
+    sector_t *read_sector = &sectors[read_sector_];
+    const uint8_t *src_ptr = ((const uint8_t *)&read_sector->data[read_sector->index - n_valid_]) + offset;
     memcpy(data, src_ptr, length);
     return 0;
 }
@@ -359,9 +465,15 @@ int NVM_read(size_t offset, uint8_t *data, size_t length) {
 // The length must be at most equal to the size indicated by NVM_get_max_write_length().
 //
 // @param length: Length of the staging block that should be created
+#if defined(STM32G474xx)
+static uint64_t g4_staging_word;
+static size_t g4_staging_count;
+static size_t g4_staging_flushed_offset;
+#endif
+
 int NVM_start_write(size_t length) {
     int status = 0;
-    page_t *target = &pages[1 - read_page_];
+    sector_t *target = &sectors[1 - read_sector_];
 
     length = (length + 7) >> 3; // round to multiple of 64 bit
     if (length > target->n_data - target->n_reserved)
@@ -378,6 +490,11 @@ int NVM_start_write(size_t length) {
         return status;
 
     n_staging_area_ = length;
+#if defined(STM32G474xx)
+    g4_staging_word = 0xFFFFFFFFFFFFFFFF;
+    g4_staging_count = 0;
+    g4_staging_flushed_offset = 0;
+#endif
     return 0;
 }
 
@@ -394,82 +511,64 @@ int NVM_start_write(size_t length) {
 int NVM_write(size_t offset, uint8_t *data, size_t length) {
     if (offset + length > (n_staging_area_ << 3))
         return -1;
-    page_t *target = &pages[1 - read_page_];
-    uintptr_t base_addr = (uintptr_t)&target->data[target->index];
-    uintptr_t write_addr = base_addr + offset;
-    
+    sector_t *target = &sectors[1 - read_sector_];
+
     HAL_FLASH_Unlock();
     HAL_FLASH_ClearError();
-    
-    // 处理起始非对齐部分（小于8字节）
-    size_t start_unaligned = write_addr & 0x7;
-    if (start_unaligned && length > 0) {
-        size_t chunk_size = 8 - start_unaligned;
-        if (chunk_size > length) chunk_size = length;
+
+#if defined(STM32G474xx)
+    // On G4 we only support sequential writes because double words cannot be programmed twice.
+    if (offset != g4_staging_flushed_offset + g4_staging_count)
+        goto fail;
+
+    while (length > 0) {
+        size_t space = 8 - g4_staging_count;
+        size_t to_copy = (length < space) ? length : space;
         
-        // 构造64位数据
-        uint64_t aligned_data = 0xFFFFFFFFFFFFFFFF; // 初始化为全1（擦除状态）
-        uint8_t *aligned_ptr = (uint8_t*)&aligned_data;
-        
-        // 复制数据到64位缓冲区
-        for (size_t i = 0; i < chunk_size; i++) {
-            aligned_ptr[start_unaligned + i] = data[i];
+        // Copy into staging word
+        for (size_t i = 0; i < to_copy; i++) {
+            ((uint8_t*)&g4_staging_word)[g4_staging_count + i] = data[i];
         }
         
-        // 对齐地址
-        uintptr_t aligned_addr = write_addr & ~0x7ULL;
+        g4_staging_count += to_copy;
+        data += to_copy;
+        length -= to_copy;
         
-        // 写入64位数据
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, 
-                              aligned_addr, aligned_data) != HAL_OK) {
-            goto fail;
-        }
-        
-        // 更新指针和长度
-        data += chunk_size;
-        length -= chunk_size;
-        write_addr += chunk_size;
-    }
-    
-    // 写入完整的64位块
-    while (length >= 8) {
-        // 直接使用64位数据
-        uint64_t *data64 = (uint64_t*)data;
-        
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, 
-                              write_addr, *data64) != HAL_OK) {
-            goto fail;
-        }
-        
-        data += 8;
-        length -= 8;
-        write_addr += 8;
-    }
-    
-    // 处理尾部非对齐部分（小于8字节）
-    if (length > 0) {
-        // 构造64位数据
-        uint64_t aligned_data = 0xFFFFFFFFFFFFFFFF; // 初始化为全1（擦除状态）
-        uint8_t *aligned_ptr = (uint8_t*)&aligned_data;
-        
-        // 复制数据到64位缓冲区
-        for (size_t i = 0; i < length; i++) {
-            aligned_ptr[i] = data[i];
-        }
-        
-        // 对齐地址
-        uintptr_t aligned_addr = write_addr & ~0x7ULL;
-        
-        // 写入64位数据
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, 
-                              aligned_addr, aligned_data) != HAL_OK) {
-            goto fail;
+        // Flush if full
+        if (g4_staging_count == 8) {
+            uintptr_t addr = ((uintptr_t)&target->data[target->index]) + g4_staging_flushed_offset;
+            if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr, g4_staging_word) != HAL_OK)
+                goto fail;
+            g4_staging_flushed_offset += 8;
+            g4_staging_count = 0;
+            g4_staging_word = 0xFFFFFFFFFFFFFFFF;
         }
     }
     
     HAL_FLASH_Lock();
     return 0;
-    
+#else
+    // handle unaligned start
+    for (; (offset & 0x3) && length; ++data, ++offset, --length)
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,
+                ((uintptr_t)&target->data[target->index]) + offset, *data) != HAL_OK)
+            goto fail;
+
+    // write 32-bit values (64-bit doesn't work)
+    for (; length >= 4; data += 4, offset += 4, length -=4)
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,
+                ((uintptr_t)&target->data[target->index]) + offset, *(uint32_t*)data) != HAL_OK)
+            goto fail;
+
+    // handle unaligned end
+    for (; length; ++data, ++offset, --length)
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,
+                ((uintptr_t)&target->data[target->index]) + offset, *data) != HAL_OK)
+            goto fail;
+
+    HAL_FLASH_Lock();
+    return 0;
+#endif
 fail:
     HAL_FLASH_Lock();
     return HAL_FLASH_GetError(); // non-zero
@@ -477,25 +576,42 @@ fail:
 
 // @brief Commits the new data to NVM atomically.
 int NVM_commit(void) {
-    page_t *read_page = &pages[read_page_];
-    page_t *write_page = &pages[1 - read_page_];
+    sector_t *read_sector = &sectors[read_sector_];
+    sector_t *write_sector = &sectors[1 - read_sector_];
+
+#if defined(STM32G474xx)
+    // Flush any remaining buffered data
+    if (g4_staging_count > 0) {
+        HAL_FLASH_Unlock();
+        HAL_FLASH_ClearError();
+        uintptr_t addr = ((uintptr_t)&write_sector->data[write_sector->index]) + g4_staging_flushed_offset;
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr, g4_staging_word) != HAL_OK) {
+            HAL_FLASH_Lock();
+            return HAL_FLASH_GetError();
+        }
+        HAL_FLASH_Lock();
+        g4_staging_count = 0;
+        g4_staging_flushed_offset += 8;
+        g4_staging_word = 0xFFFFFFFFFFFFFFFF;
+    }
+#endif
 
     // mark the newly-written fields as valid
-    int status = set_allocation_state(write_page, write_page->index, n_staging_area_, VALID);
+    int status = set_allocation_state(write_sector, write_sector->index, n_staging_area_, VALID);
     if (status)
         return status;
 
-    write_page->index += n_staging_area_;
+    write_sector->index += n_staging_area_;
     n_valid_ = n_staging_area_;
     n_staging_area_ = 0;
-    read_page_ = 1 - read_page_;
+    read_sector_ = 1 - read_sector_;
 
-    // invalidate the other page
-    if (read_page->index < read_page->n_data) {
-        status = set_allocation_state(read_page, read_page->index, 1, INVALID);
-        read_page->index += 1;
+    // invalidate the other sector
+    if (read_sector->index < read_sector->n_data) {
+        status = set_allocation_state(read_sector, read_sector->index, 1, INVALID);
+        read_sector->index += 1;
     } else {
-        status = erase(read_page);
+        status = erase(read_sector);
     }
 
     return status;

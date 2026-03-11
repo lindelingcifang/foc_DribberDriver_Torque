@@ -85,9 +85,9 @@ bool Controller::anticogging_calibration(float pos_estimate, float vel_estimate)
     float pos_err = input_pos_ - pos_estimate;
     if (std::abs(pos_err) <= config_.anticogging.calib_pos_threshold / (float)axis_->encoder_.config_.cpr &&
         std::abs(vel_estimate) < config_.anticogging.calib_vel_threshold / (float)axis_->encoder_.config_.cpr) {
-        config_.anticogging.cogging_map[std::clamp<uint32_t>(config_.anticogging.index++, 0, 3600)] = vel_integrator_torque_;
+        config_.anticogging.cogging_map[std::clamp<uint32_t>(config_.anticogging.index++, 0, 300)] = vel_integrator_torque_;
     }
-    if (config_.anticogging.index < 3600) {
+    if (config_.anticogging.index < 300) {
         config_.control_mode = CONTROL_MODE_POSITION_CONTROL;
         input_pos_ = config_.anticogging.index * axis_->encoder_.getCoggingRatio();
         input_vel_ = 0.0f;
@@ -362,7 +362,7 @@ bool Controller::update() {
             return false;
         }
         float anticogging_pos = *anticogging_pos_estimate / axis_->encoder_.getCoggingRatio();
-        torque += config_.anticogging.cogging_map[std::clamp(mod((int)anticogging_pos, 3600), 0, 3600)];
+        torque += config_.anticogging.cogging_map[std::clamp(mod((int)anticogging_pos, 300), 0, 300)];
     }
 
     float v_err = 0.0f;

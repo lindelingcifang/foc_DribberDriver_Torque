@@ -1,43 +1,49 @@
 
 
 Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/motor.cpp:455:31, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp:552:13, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/main.cpp:438:5, State=BP_STATE_DISABLED
 Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/axis.cpp:208:5, State=BP_STATE_DISABLED
 Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/axis.cpp:417, State=BP_STATE_DISABLED
 Breakpoint=/home/lxl/zfoc/Firmware/MotorControl/foc.cpp:79:37, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/Board/v2/board.cpp:250:56, State=BP_STATE_DISABLED
-Breakpoint=/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp:79, State=BP_STATE_DISABLED
-GraphedExpression="pos_estimate_debug", Color=#e56a6f, Show=0
-GraphedExpression="vel_estimate_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#35792b, Show=0
-GraphedExpression="raw_val_debug", Color=#769dda
-GraphedExpression="spi_error_rate_debug", Color=#b14f0d, Show=0
-OpenDocument="board.cpp", FilePath="/home/lxl/zfoc/Firmware/Board/v2/board.cpp", Line=271
-OpenDocument="stm32_spi_arbiter.cpp", FilePath="/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp", Line=6
-OpenDocument="open_loop_controller.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/open_loop_controller.cpp", Line=0
-OpenDocument="stm32g4xx_hal_dma.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c", Line=438
-OpenDocument="startup_stm32g474xx.s", FilePath="/home/lxl/zfoc/Firmware/Board/v2/startup_stm32g474xx.s", Line=46
-OpenDocument="encoder.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/encoder.cpp", Line=303
-OpenDocument="main.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/main.cpp", Line=414
+Breakpoint=/home/lxl/zfoc/Firmware/Board/v2/board.cpp:257:35, State=BP_STATE_DISABLED
+Breakpoint=/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp:54, State=BP_STATE_ON
+Breakpoint=/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp:114:37, State=BP_STATE_DISABLED
+GraphedExpression="debug_torque", Color=#e56a6f
+GraphedExpression="alpha_debug", Color=#35792b, Show=0
+GraphedExpression="beta_debug", Color=#769dda, Show=0
+GraphedExpression="debug_IA", Color=#b14f0d, Show=0
+GraphedExpression="debug_IB", Color=#b3c38e, Show=0
+GraphedExpression="pos_estimate_debug", Color=#ab7b05, Show=0
+GraphedExpression="vel_estimate_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#7fd3b7
+OpenDocument="motor.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/motor.cpp", Line=623
+OpenDocument="tasks.c", FilePath="/home/lxl/zfoc/Firmware/ThirdParty/FreeRTOS/Source/tasks.c", Line=3796
+OpenDocument="stm32g4xx_it.c", FilePath="/home/lxl/zfoc/Firmware/Board/v2/Core/Src/stm32g4xx_it.c", Line=94
+OpenDocument="main.cpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/main.cpp", Line=413
+OpenDocument="board.cpp", FilePath="/home/lxl/zfoc/Firmware/Board/v2/board.cpp", Line=283
+OpenDocument="startup_stm32g474xx.s", FilePath="/home/lxl/zfoc/Firmware/Board/v2/startup_stm32g474xx.s", Line=55
+OpenDocument="stm32_nvm.c", FilePath="/home/lxl/zfoc/Firmware/Drivers/STM32/stm32_nvm.c", Line=383
+OpenDocument="nvm_config.hpp", FilePath="/home/lxl/zfoc/Firmware/MotorControl/nvm_config.hpp", Line=39
+OpenDocument="stl_algobase.h", FilePath="/usr/include/newlib/c++/13.2.1/bits/stl_algobase.h", Line=226
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=485, h=278, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Source Files", DockArea=BOTTOM, x=3, y=0, w=154, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=485, h=334, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=788, h=554, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=788, h=397, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=597, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=2, y=0, w=1584, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="100 ms / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="193;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1635;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="1610;0"
-OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=141, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=485, h=333, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=485, h=260, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=BOTTOM, x=3, y=0, w=280, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=485, h=294, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=788, h=482, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=788, h=372, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=580, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=2, y=0, w=1414, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="193;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1262;-115", CodeGraphLegendShown=0, CodeGraphLegendPosition="1185;0"
+OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=136, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=485, h=294, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
-TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;129;459]
-TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[362;196;364;140;182;100]
-TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[442;126;100;100;882]
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" pos_estimate_debug";" vel_estimate_debug";" raw_val_debug";" spi_error_rate_debug"], ColWidths=[100;100;100;100;100;100]
-TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[173;112;100;112;119;100;100;100;100]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;129;1036]
+TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[362;196;364;140;182;135]
+TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[442;126;100;100;1750]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" debug_torque";" alpha_debug";" beta_debug";" debug_IA";" debug_IB";" pos_estimate_debug";" vel_estimate_debug"], ColWidths=[100;100;100;100;100;100;100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[173;100;100;210;224;114;141;161;168]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Task List", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Name";"Run Count";"Priority";"Status";"Timeout";"Stack Info";"ID";"Mutex Count";"Notified Value";"Notify State"], ColWidths=[194;53;110;110;36;36;151;110;110;110]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[369;624;192;100;100]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[369;624;192;100;112]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[284;230;133;1492]
 WatchedExpression="counting_down", Window=Watched Data 1

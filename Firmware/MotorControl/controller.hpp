@@ -5,7 +5,7 @@ class Controller : public ZfocIntf::ControllerIntf {
 public:
     struct Anticogging_t {
         uint32_t index = 0;
-        float cogging_map[3600];
+        float cogging_map[300];
         bool pre_calibrated = false;
         bool calib_anticogging = false;
         float calib_pos_threshold = 200.0f;
@@ -24,11 +24,11 @@ public:
     struct Config_t {
         ControlMode control_mode = CONTROL_MODE_TORQUE_CONTROL;  //see: ControlMode_t
         InputMode input_mode = INPUT_MODE_PASSTHROUGH;             //see: InputMode_t
-        float pos_gain = 20.0f;                  // [(turn/s) / turn]
-        float vel_gain = 1.0f / 12.0f;            // [Nm/(turn/s)]
+        float pos_gain = 5.0f;                  // [(turn/s) / turn]
+        float vel_gain = 1.0f / 100.0f;            // [Nm/(turn/s)]
         // float vel_gain = 0.2f / 200.0f,       // [Nm/(rad/s)] <sensorless example>
-        float vel_integrator_gain = 2.0f / 6.0f; // [Nm/(turn/s * s)]
-        float vel_limit = 5.0f;                  // [turn/s] Infinity to disable.
+        float vel_integrator_gain = 1.0f / 45.0f; // [Nm/(turn/s * s)]
+        float vel_limit = 50.0f;                  // [turn/s] Infinity to disable.
         float vel_limit_tolerance = INFINITY;        // ratio to vel_lim. Infinity to disable.
         float vel_integrator_limit = INFINITY;   // Vel. integrator clamping value. Infinity to disable.
         float vel_ramp_rate = 1.0f;              // [(turn/s) / s]
@@ -85,7 +85,7 @@ public:
     bool anticogging_calibration(float pos_estimate, float vel_estimate);
     
     float get_anticogging_value(uint32_t index) {
-        return (index < 3600) ? config_.anticogging.cogging_map[index] : 0.0f;
+        return (index < 300) ? config_.anticogging.cogging_map[index] : 0.0f;
     }
 
     void update_filter_gains();
