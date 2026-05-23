@@ -30,6 +30,9 @@ uint32_t adc_vals[ADC_CHANNEL_COUNT] = {1, 1, 1, 1};
 Stm32SpiArbiter spi1_arbiter{&hspi1};
 Stm32SpiArbiter& ext_spi_arbiter = spi1_arbiter;
 
+// 红外传感器
+uint16_t infra_adc_raw = 0;      // 红外 ADC 原始值 (12-bit, 0-4095)
+
 Motor motors[AXIS_COUNT] = {
     {
         &htim1,
@@ -62,7 +65,7 @@ TrapezoidalTrajectory traps[AXIS_COUNT];
 std::array<Axis, AXIS_COUNT> axes = {
     {
         {
-            0, // axis_num
+            5, // axis_num
             (osPriority)(osPriorityHigh + (osPriority)1), // thread_priority
             encoders[0],
             controllers[0],
@@ -162,10 +165,14 @@ void start_timers() {
     }
 }
 
+void infra_sense_adc_cb(uint32_t adc_value) {
+    infra_adc_raw = (uint16_t)(adc_value & 0xFFFU);
+}
+
 static bool fetch_and_reset_adcs(
         std::optional<Iph_ABC_t>* current0,
         std::optional<Iph_ABC_t>* current1) {
-    bool all_adcs_done = (ADC1->ISR & ADC_ISR_JEOC) == ADC_ISR_JEOC
+    bool all_adcs_done = (ADC1->ISR & (ADC_ISR_EOC | ADC_ISR_JEOC)) == (ADC_ISR_EOC | ADC_ISR_JEOC)
         && (ADC2->ISR & (ADC_ISR_EOC | ADC_ISR_JEOC)) == (ADC_ISR_EOC | ADC_ISR_JEOC)
         && (ADC3->ISR & (ADC_ISR_EOC | ADC_ISR_JEOC)) == (ADC_ISR_EOC | ADC_ISR_JEOC);
     if (!all_adcs_done) {
@@ -173,6 +180,7 @@ static bool fetch_and_reset_adcs(
     }
 
     vbus_sense_adc_cb(ADC1->JDR1);
+    infra_sense_adc_cb(ADC1->DR);
 
     std::optional<float> phA = motors[0].phase_current_from_adcval(ADC2->JDR1);
     std::optional<float> phB = motors[0].phase_current_from_adcval(ADC3->JDR1);
@@ -186,7 +194,7 @@ static bool fetch_and_reset_adcs(
         *current1 = {*phA, *phB, -*phA - *phB};
     }
     
-    ADC1->ISR = ~(ADC_ISR_JEOC);
+    ADC1->ISR = ~(ADC_ISR_EOC | ADC_ISR_JEOC | ADC_ISR_OVR);
     ADC2->ISR = ~(ADC_ISR_EOC | ADC_ISR_JEOC | ADC_ISR_OVR);
     ADC3->ISR = ~(ADC_ISR_EOC | ADC_ISR_JEOC | ADC_ISR_OVR);
 

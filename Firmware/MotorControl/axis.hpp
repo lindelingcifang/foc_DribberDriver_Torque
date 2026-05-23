@@ -176,7 +176,7 @@ public:
     Stm32Gpio step_gpio_;
     Stm32Gpio dir_gpio_;
 
-    AxisState requested_state_ = AXIS_STATE_STARTUP_SEQUENCE;
+    AxisState requested_state_ = AXIS_STATE_FULL_CALIBRATION_SEQUENCE;
     std::array<AxisState, 10> task_chain_ = { AXIS_STATE_UNDEFINED };
     AxisState& current_state_ = task_chain_.front();
     Homing_t homing_;

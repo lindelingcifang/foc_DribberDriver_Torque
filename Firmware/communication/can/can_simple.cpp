@@ -390,20 +390,17 @@ bool CANSimple::send_heartbeat(const Axis& axis) {
     can_setSignal(txmsg, axis.error_, 0, 32, true);
     can_setSignal(txmsg, uint8_t(axis.current_state_), 32, 8, true);
 
-    // Motor flags
-    uint8_t motorFlags = axis.motor_.error_ != 0;
+    // 合并标志位: bit0=motor_err, bit1=encoder_err, bit2=controller_err, bit7=traj_done
+    uint8_t flags = 0;
+    flags |= (axis.motor_.error_ != 0) ? 0x01 : 0x00;
+    flags |= (axis.encoder_.error_ != 0) ? 0x02 : 0x00;
+    flags |= (axis.controller_.error_ != 0) ? 0x04 : 0x00;
+    flags |= uint8_t(axis.controller_.trajectory_done_) << 7;
+    can_setSignal(txmsg, flags, 40, 8, true);
 
-    // Encoder flags
-    uint8_t encoderFlags = axis.encoder_.error_ != 0;
-
-    // Controller flags
-    uint8_t controllerFlags =axis.controller_.error_ != 0;
-    uint8_t trajDone = uint8_t(axis.controller_.trajectory_done_) << 7;
-    controllerFlags |= trajDone;
-
-    can_setSignal(txmsg, motorFlags, 40, 8, true);
-    can_setSignal(txmsg, encoderFlags, 48, 8, true);
-    can_setSignal(txmsg, controllerFlags, 56, 8, true);
+    // 红外 ADC 原始值
+    extern uint16_t infra_adc_raw;
+    can_setSignal(txmsg, infra_adc_raw, 48, 16, true);
 
     return canbus_->send_message(txmsg);
 }
