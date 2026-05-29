@@ -526,7 +526,7 @@ bool Encoder::update() {
     vel_estimate_filtered_ = vel_filtered;
 
     // debug variables
-    if (axis_->axis_num_ == 0) {
+    if (axis_->axis_num_ == 5) {
         pos_abs_debug = pos_abs_;
         pos_estimate_debug = pos_estimate_counts_ / (float)config_.cpr;
         vel_estimate_debug = vel_filtered; // Use filtered velocity for debug
@@ -539,7 +539,7 @@ bool Encoder::update() {
     pos_circular +=  wrap_pm((pos_cpr_counts_ - pos_cpr_counts_last) / (float)config_.cpr, 1.0f);
     pos_circular = fmodf_pos(pos_circular, axis_->controller_.config_.circular_setpoint_range);
     pos_circular_ = pos_circular;
-    if (axis_->axis_num_ == 0) {
+    if (axis_->axis_num_ == 5) {
         pose_cirular_debug = pos_circular;
     }
 
@@ -572,7 +572,7 @@ bool Encoder::update() {
         phase_ = wrap_pm_pi(ph) * config_.direction;
         phase_vel_ = (2*M_PI) * *vel_estimate_.present() * axis_->motor_.config_.pole_pairs * config_.direction;
 
-        if (axis_->axis_num_ == 0) {
+        if (axis_->axis_num_ == 5) {
         //debug
         phase_debug = phase_.present().value_or(0.0f);
         }
