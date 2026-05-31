@@ -7,6 +7,16 @@ float beta_debug = 0.0f;  // debug
 float cos_p_debug = 0.0f; // debug
 float sin_p_debug = 0.0f; // debug
 
+// Current loop debug variables - for Ozone Data Sampling / Graph
+float debug_Id_setpoint = 0.0f; // [A] d-axis current command
+float debug_Iq_setpoint = 0.0f; // [A] q-axis current command (step input)
+float debug_Id_measured = 0.0f; // [A] d-axis current (instantaneous from Park)
+float debug_Iq_measured = 0.0f; // [A] q-axis current (instantaneous from Park)
+float debug_Ierr_d = 0.0f;      // [A] d-axis current error
+float debug_Ierr_q = 0.0f;      // [A] q-axis current error
+float debug_Vd_output = 0.0f;   // [V] total d-axis voltage (FF + P + I, after saturation)
+float debug_Vq_output = 0.0f;   // [V] total q-axis voltage (FF + P + I, after saturation)
+
 Motor::Error AlphaBetaFrameController::on_measurement(
             std::optional<float> vbus_voltage,
             std::optional<std::array<float, 3>> currents,
@@ -165,10 +175,29 @@ ZfocIntf::MotorIntf::Error FieldOrientedController::get_alpha_beta_output(
             v_current_control_integral_q_ += Ierr_q * (i_gain * current_meas_period);
         }
 
+        // debug: capture current loop signals for Ozone waveform analysis
+        debug_Id_setpoint = Id_setpoint;
+        debug_Iq_setpoint = Iq_setpoint;
+        debug_Id_measured = Id;
+        debug_Iq_measured = Iq;
+        debug_Ierr_d = Ierr_d;
+        debug_Ierr_q = Ierr_q;
+        debug_Vd_output = mod_d * mod_to_V;
+        debug_Vq_output = mod_q * mod_to_V;
+
     } else {
         // Voltage control mode
         mod_d = V_to_mod * Vd;
         mod_q = V_to_mod * Vq;
+        // debug: current loop not active, zero the debug variables
+        debug_Id_setpoint = 0.0f;
+        debug_Iq_setpoint = 0.0f;
+        debug_Id_measured = 0.0f;
+        debug_Iq_measured = 0.0f;
+        debug_Ierr_d = 0.0f;
+        debug_Ierr_q = 0.0f;
+        debug_Vd_output = 0.0f;
+        debug_Vq_output = 0.0f;
     }
 
     // Inverse park transform

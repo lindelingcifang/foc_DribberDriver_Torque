@@ -378,7 +378,7 @@ bool Controller::update() {
         // Velocity integral action before limiting
         torque += vel_integrator_torque_;
 
-        if (axis_->axis_num_ == 0) {
+        if (axis_->axis_num_ == 5) {
             //debug
             vel_err_debug = v_err;
         }
@@ -402,6 +402,15 @@ bool Controller::update() {
     if (torque < -Tlim) {
         limited = true;
         torque = -Tlim;
+    }
+
+    // Asymmetric torque limit (e.g. dribbler ball suction: [-0.05, 0])
+    if (config_.torque_limit_min > -INFINITY || config_.torque_limit_max < INFINITY) {
+        float clamped = std::clamp(torque, config_.torque_limit_min, config_.torque_limit_max);
+        if (clamped != torque) {
+            limited = true;
+            torque = clamped;
+        }
     }
 
     // Velocity integrator (behaviour dependent on limiting)
@@ -445,7 +454,7 @@ bool Controller::update() {
     }
 
     torque_output_ = torque;
-    if (axis_->axis_num_ == 0) {
+    if (axis_->axis_num_ == 5) {
         //debug
         closed_torque_debug = torque;
     }
