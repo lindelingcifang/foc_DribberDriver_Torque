@@ -61,7 +61,7 @@ static const float current_meas_period = CURRENT_MEAS_PERIOD;
 #define CURRENT_MEAS_HZ ( (float)(TIM_1_8_CLOCK_HZ) / (float)(2*TIM_1_8_PERIOD_CLOCKS*(TIM_1_8_RCR+1)) )
 static const int current_meas_hz = (int)CURRENT_MEAS_HZ;
 
-#define VBUS_S_DIVIDER_RATIO 11.0f
+#define VBUS_S_DIVIDER_RATIO 12.0f
 
 // Linear range of the DRV8301 opamp output: 0.3V...5.7V. We set the upper limit
 // to 3.0V so that it's symmetric around the center point of 1.65V.

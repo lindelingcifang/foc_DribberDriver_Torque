@@ -242,7 +242,12 @@ void CANSimple::set_input_pos_callback(Axis& axis, const can_Message_t& msg) {
 
 void CANSimple::set_input_vel_callback(Axis& axis, const can_Message_t& msg) {
     axis.controller_.input_vel_ = can_getSignal<float>(msg, 0, 32, true);
-    axis.controller_.input_torque_ = can_getSignal<float>(msg, 32, 32, true);
+    float torque_limit_mag = can_getSignal<float>(msg, 32, 32, true);
+    axis.controller_.input_torque_ = 0.0f;
+    if (torque_limit_mag > 0.0f) {
+        axis.controller_.config_.torque_limit_max = torque_limit_mag;
+        axis.controller_.config_.torque_limit_min = -torque_limit_mag;
+    }
 }
 
 void CANSimple::set_input_torque_callback(Axis& axis, const can_Message_t& msg) {

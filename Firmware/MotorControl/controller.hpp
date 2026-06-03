@@ -25,12 +25,12 @@ public:
         ControlMode control_mode = CONTROL_MODE_TORQUE_CONTROL;  //see: ControlMode_t
         InputMode input_mode = INPUT_MODE_PASSTHROUGH;             //see: InputMode_t
         float pos_gain = 5.0f;                  // [(turn/s) / turn]
-        float vel_gain = 1.0f / 1200.0f;            // [Nm/(turn/s)]
+        float vel_gain = 1.0f / 1000.0f;            // [Nm/(turn/s)]
         // float vel_gain = 0.2f / 200.0f,       // [Nm/(rad/s)] <sensorless example>
-        float vel_integrator_gain = 1.0f / 1000.0f; // [Nm/(turn/s * s)]
-        float vel_limit = 50.0f;                  // [turn/s] Infinity to disable.
+        float vel_integrator_gain = 1.0f / 100.0f; // [Nm/(turn/s * s)]
+        float vel_limit = 100.0f;                  // [turn/s] Infinity to disable.
         float vel_limit_tolerance = INFINITY;        // ratio to vel_lim. Infinity to disable.
-        float vel_integrator_limit = 0.01;   // Vel. integrator clamping value. Infinity to disable.
+        float vel_integrator_limit = 0.1;   // Vel. integrator clamping value. Infinity to disable.
         float vel_ramp_rate = 1.0f;              // [(turn/s) / s]
         float torque_ramp_rate = 0.01f;          // Nm / sec
         float torque_limit_min = -INFINITY;   // [Nm] asymmetric torque lower limit, INFINITY to disable

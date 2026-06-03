@@ -20,8 +20,8 @@ public:
         int32_t pole_pairs = 1;
         float calibration_current = 0.5f;    // [A]
         float resistance_calib_max_voltage = 1.0f; // [V] - You may need to increase this if this voltage isn't sufficient to drive calibration_current through the motor.
-        float phase_inductance = 0.000305f;        // to be set by measure_phase_inductance
-        float phase_resistance = 0.735f;        // to be set by measure_phase_resistance
+        float phase_inductance = 0.0000392f;        // to be set by measure_phase_inductance
+        float phase_resistance = 0.37f;        // to be set by measure_phase_resistance
         float torque_constant = 0.0516875f;         // [Nm/A] for PM motors, [Nm/A^2] for induction motors. Equal to 8.27/Kv of the motor
         MotorType motor_type = MOTOR_TYPE_HIGH_CURRENT;
         // Read out max_allowed_current to see max supported value for current_lim.
@@ -31,7 +31,7 @@ public:
         float torque_lim = std::numeric_limits<float>::infinity();           //[Nm]. 
         // Value used to compute shunt amplifier gains
         float requested_current_range = 60.0f; // [A]
-        float current_control_bandwidth = 2000.0f;  // [rad/s]
+        float current_control_bandwidth = 1000.0f;  // [rad/s]
         float inverter_temp_limit_lower = 100;
         float inverter_temp_limit_upper = 120;
         

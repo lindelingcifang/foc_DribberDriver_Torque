@@ -310,7 +310,13 @@ float get_adc_relative_voltage_ch(uint16_t channel) {
 
 void vbus_sense_adc_cb(uint32_t adc_value) {
     constexpr float voltage_scale = adc_ref_voltage * VBUS_S_DIVIDER_RATIO / adc_full_scale;
-    vbus_voltage = adc_value * voltage_scale;
+    static float vbus_filtered = 12.0f;
+    float vbus_raw = adc_value * voltage_scale;
+    if (vbus_raw > 5.0f) {
+        vbus_filtered += 0.01f * (vbus_raw - vbus_filtered);
+        vbus_voltage = vbus_filtered;
+    }
+    // invalid reading: keep previous vbus_voltage
 }
 
 // @brief Sums up the Ibus contribution of each motor and updates the
