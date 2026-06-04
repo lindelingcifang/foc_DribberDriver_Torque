@@ -65,10 +65,10 @@ static void config_clear_all() {
         axes[i].clear_config();
     }
     // Axis 0 (dribbler): velocity control with symmetric torque limit, magnitude set by CAN MSG_SET_INPUT_VEL bytes 4-7
-    axes[0].controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
+    axes[0].controller_.config_.control_mode = Controller::CONTROL_MODE_TORQUE_CONTROL;
     axes[0].controller_.config_.input_mode = Controller::INPUT_MODE_PASSTHROUGH;
-    axes[0].controller_.config_.torque_limit_min = -0.1f;
-    axes[0].controller_.config_.torque_limit_max = 0.1f;
+    axes[0].controller_.config_.torque_limit_min = -0.25f;
+    axes[0].controller_.config_.torque_limit_max = 0.25f;
 }
 
 static bool config_apply_all() {

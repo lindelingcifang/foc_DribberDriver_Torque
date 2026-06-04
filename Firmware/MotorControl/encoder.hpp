@@ -19,7 +19,7 @@ public:
         float calib_range = 0.025f; // Accuracy required to pass encoder cpr check
         float calib_scan_distance = 16.0f * M_PI; // rad electrical
         float calib_scan_omega = 4.0f * M_PI; // rad/s electrical
-        float bandwidth = 1000.0f;  // PLL bandwidth [Hz], reduced from 1000 for noise reduction
+        float bandwidth = 5000.0f;  // PLL bandwidth [Hz], reduced from 1000 for noise reduction
         float vel_filter_bandwidth = 500.0f; // Additional velocity low-pass filter bandwidth [Hz]
         int32_t phase_offset = 27;        // Offset between encoder count and rotor electrical phase
         float phase_offset_float = 0.501499832f; // Sub-count phase alignment offset
