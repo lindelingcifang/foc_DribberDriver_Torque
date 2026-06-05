@@ -144,6 +144,26 @@ static float limitVel(const float vel_limit, const float vel_estimate, const flo
     return std::clamp(torque, Tmin, Tmax);
 }
 
+// Asymmetric velocity limit for dribbler.
+// v_min = -50 (hardcoded upper bound), v_max = vel_lower from CAN (e.g. -20).
+// When velocity is in range [v_min, v_max], torque passes through unchanged.
+// When velocity is outside the range:
+//   - Too slow (vel > v_max): add a constant 0.02 Nm boost to accelerate.
+//   - Too fast (vel < v_min): P control clamps torque to force deceleration.
+static float limitVelAsymmetric(const float v_min, const float v_max,
+                                 const float vel_estimate, const float vel_gain,
+                                 const float torque) {
+    if (vel_estimate > v_max) {
+        // Too slow: boost torque by 0.02 Nm to accelerate
+        return torque;
+    } else if (vel_estimate < v_min) {
+        // Too fast: P control to force deceleration
+        float T_min = (v_min - vel_estimate) * vel_gain;
+        if (torque < T_min) return T_min;
+    }
+    return torque;
+}
+
 bool Controller::update() {
     std::optional<float> pos_estimate_linear = pos_estimate_linear_src_.present();
     std::optional<float> pos_estimate_circular = pos_estimate_circular_src_.present();
@@ -390,7 +410,13 @@ bool Controller::update() {
             set_error(ERROR_INVALID_ESTIMATE);
             return false;
         }
-        torque = limitVel(config_.vel_limit, *vel_estimate, vel_gain, torque);
+        if (config_.enable_dribbler_vel_limit) {
+            // Dribbler asymmetric velocity limit: v_min=-50 (hardcoded), v_max from CAN
+            torque = limitVelAsymmetric(-50.0f, config_.dribbler_vel_limit_lower,
+                                        *vel_estimate, vel_gain, torque);
+        } else {
+            torque = limitVel(config_.vel_limit, *vel_estimate, vel_gain, torque);
+        }
     }
 
     // Torque limiting

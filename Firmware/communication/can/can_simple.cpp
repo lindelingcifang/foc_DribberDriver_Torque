@@ -4,6 +4,18 @@
 #include <zfoc_main.h>
 #include <functional>
 
+// Debug variables for Ozone Watch window
+float debug_rx_torque = 0.0f;
+float debug_rx_vel_lower = 0.0f;
+float debug_rx_can_id = 0.0f;
+uint8_t debug_rx_can_buf[8] = {0};
+float debug_hb_torque_cmd = 0.0f;
+float debug_hb_vel_lower = 0.0f;
+float debug_hb_error = 0.0f;
+float debug_hb_state = 0.0f;
+float debug_hb_flags = 0.0f;
+uint8_t debug_hb_buf[8] = {0};
+
 bool CANSimple::init() {
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
         if (!renew_subscription(i)) {
@@ -251,7 +263,34 @@ void CANSimple::set_input_vel_callback(Axis& axis, const can_Message_t& msg) {
 }
 
 void CANSimple::set_input_torque_callback(Axis& axis, const can_Message_t& msg) {
-    axis.controller_.input_torque_ = can_getSignal<float>(msg, 0, 32, true);
+    float torque = can_getSignal<float>(msg, 0, 32, true);
+    float vel_lower = can_getSignal<float>(msg, 32, 32, true);
+
+    // Debug: record received CAN data for Ozone
+    debug_rx_can_id = (float)msg.id;
+    debug_rx_torque = torque;
+    debug_rx_vel_lower = vel_lower;
+    memcpy(debug_rx_can_buf, msg.buf, 8);
+
+    // All-zero CAN frame → stop motor (idle)
+    if (torque == 0.0f && vel_lower == 0.0f) {
+        axis.requested_state_ = Axis::AXIS_STATE_IDLE;
+        return;
+    }
+
+    // Debug: record active torque command for heartbeat
+    debug_hb_torque_cmd = torque;
+    debug_hb_vel_lower = vel_lower;
+
+    // Update torque and speed limit
+    axis.controller_.input_torque_ = torque;
+    axis.controller_.config_.dribbler_vel_limit_lower = vel_lower;
+
+    // Auto-request closed-loop control when idle
+    if (axis.requested_state_ == Axis::AXIS_STATE_UNDEFINED
+        && axis.current_state_ == Axis::AXIS_STATE_IDLE) {
+        axis.requested_state_ = Axis::AXIS_STATE_CLOSED_LOOP_CONTROL;
+    }
 }
 
 void CANSimple::set_controller_modes_callback(Axis& axis, const can_Message_t& msg) {
@@ -406,6 +445,12 @@ bool CANSimple::send_heartbeat(const Axis& axis) {
     // 红外 ADC 原始值
     extern uint16_t infra_adc_raw;
     can_setSignal(txmsg, infra_adc_raw, 48, 16, true);
+
+    // Debug: record heartbeat data for Ozone
+    debug_hb_error = (float)axis.error_;
+    debug_hb_state = (float)axis.current_state_;
+    debug_hb_flags = (float)flags;
+    memcpy(debug_hb_buf, txmsg.buf, 8);
 
     return canbus_->send_message(txmsg);
 }

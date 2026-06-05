@@ -47,6 +47,8 @@ public:
         bool enable_vel_limit = true;
         bool enable_overspeed_error = true;
         bool enable_torque_mode_vel_limit = true;  // enable velocity limit in current control mode (requires a valid velocity estimator)
+        bool enable_dribbler_vel_limit = false;  // asymmetric velocity limit for dribbler: [v_min=-50, v_max from CAN]
+        float dribbler_vel_limit_lower = 0.0f;   // [turn/s] velocity lower bound (signed, from CAN MSG_SET_INPUT_TORQUE bytes 4-7)
         uint8_t axis_to_mirror = -1;
         float mirror_ratio = 1.0f;
         float torque_mirror_ratio = 0.0f;

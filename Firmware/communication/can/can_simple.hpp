@@ -4,6 +4,18 @@
 #include "canbus.hpp"
 #include "axis.hpp"
 
+// Debug variables for Ozone Watch window
+extern float debug_rx_torque;        // Last received torque value (CAN bytes 0-3)
+extern float debug_rx_vel_lower;     // Last received velocity lower bound (CAN bytes 4-7)
+extern float debug_rx_can_id;        // Last received CAN ID (as float for Ozone, interpret as hex)
+extern uint8_t debug_rx_can_buf[8];  // Last received CAN raw 8 bytes
+extern float debug_hb_torque_cmd;    // Heartbeat: user-defined torque command
+extern float debug_hb_vel_lower;     // Heartbeat: user-defined vel_lower
+extern float debug_hb_error;         // Heartbeat: axis error (as float)
+extern float debug_hb_state;         // Heartbeat: current_state (as float)
+extern float debug_hb_flags;         // Heartbeat: flags byte (as float)
+extern uint8_t debug_hb_buf[8];      // Heartbeat: full 8 bytes sent
+
 class CANSimple {
    public:
     enum {
