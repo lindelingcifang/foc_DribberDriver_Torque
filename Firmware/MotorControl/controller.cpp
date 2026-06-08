@@ -178,6 +178,23 @@ static float limitVelAsymmetric(const float v_min, const float v_max,
     return torque;
 }
 
+float Controller::calculateDynamicVMin(float v_chassis_x) {
+    constexpr float BASE_V_MIN = -50.0f;
+    constexpr float PER_MS_COMPENSATE = 23.0f;   // turn/s per m/s
+    constexpr float SLIP_MARGIN = 1.2f;
+    constexpr float SAFETY_CLAMP = -100.0f;      // turn/s
+
+    float dynamic_v_min = BASE_V_MIN;
+    if (v_chassis_x < 0.0f) {
+        float compensate_turns = -v_chassis_x * PER_MS_COMPENSATE * SLIP_MARGIN;
+        dynamic_v_min -= compensate_turns;
+    }
+    if (dynamic_v_min < SAFETY_CLAMP) {
+        dynamic_v_min = SAFETY_CLAMP;
+    }
+    return dynamic_v_min;
+}
+
 bool Controller::update() {
     std::optional<float> pos_estimate_linear = pos_estimate_linear_src_.present();
     std::optional<float> pos_estimate_circular = pos_estimate_circular_src_.present();
@@ -425,8 +442,9 @@ bool Controller::update() {
             return false;
         }
         if (config_.enable_dribbler_vel_limit) {
-            // Dribbler asymmetric velocity limit: v_min=-50 (hardcoded), v_max from CAN
-            torque = limitVelAsymmetric(-50.0f, config_.dribbler_vel_limit_lower,
+            // Dribbler asymmetric velocity limit: v_min=dynamic (chassis-speed compensated)
+            float dynamic_v_min = calculateDynamicVMin(chassis_speed_);
+            torque = limitVelAsymmetric(dynamic_v_min, config_.dribbler_vel_limit_upper,
                                         *vel_estimate, vel_gain, torque);
         } else {
             torque = limitVel(config_.vel_limit, *vel_estimate, vel_gain, torque);

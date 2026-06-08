@@ -6,7 +6,7 @@
 
 // Debug variables for Ozone Watch window
 extern float debug_rx_torque;        // Last received torque value (CAN bytes 0-3)
-extern float debug_rx_vel_lower;     // Last received velocity lower bound (CAN bytes 4-7)
+extern float debug_rx_vel_lower;     // Last received chassis speed (CAN bytes 4-7, m/s, negative=reversing)
 extern float debug_rx_can_id;        // Last received CAN ID (as float for Ozone, interpret as hex)
 extern uint8_t debug_rx_can_buf[8];  // Last received CAN raw 8 bytes
 extern float debug_hb_torque_cmd;    // Heartbeat: user-defined torque command

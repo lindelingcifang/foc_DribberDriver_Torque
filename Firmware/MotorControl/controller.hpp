@@ -47,8 +47,8 @@ public:
         bool enable_vel_limit = true;
         bool enable_overspeed_error = true;
         bool enable_torque_mode_vel_limit = true;  // enable velocity limit in current control mode (requires a valid velocity estimator)
-        bool enable_dribbler_vel_limit = false;  // asymmetric velocity limit for dribbler: [v_min=-50, v_max from CAN]
-        float dribbler_vel_limit_lower = 0.0f;   // [turn/s] velocity lower bound (signed, from CAN MSG_SET_INPUT_TORQUE bytes 4-7)
+        bool enable_dribbler_vel_limit = false;  // asymmetric velocity limit for dribbler: [v_min=dynamic, v_max=upper]
+        float dribbler_vel_limit_upper = INFINITY; // [turn/s] v_max for asymmetric limiter (soft upper bound)
         uint8_t axis_to_mirror = -1;
         float mirror_ratio = 1.0f;
         float torque_mirror_ratio = 0.0f;
@@ -94,6 +94,7 @@ public:
 
     void update_filter_gains();
     bool update();
+    static float calculateDynamicVMin(float v_chassis_x);
 
     Config_t config_;
     Axis* axis_ = nullptr; // set by Axis constructor
@@ -129,6 +130,7 @@ public:
     bool anticogging_valid_ = false;
     float mechanical_power_ = 0.0f; // [W]
     float electrical_power_ = 0.0f; // [W]
+    float chassis_speed_ = 0.0f;     // [m/s] chassis speed (negative = reversing)
 
     // Outputs
     OutputPort<float> torque_output_ = 0.0f;

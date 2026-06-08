@@ -264,27 +264,27 @@ void CANSimple::set_input_vel_callback(Axis& axis, const can_Message_t& msg) {
 
 void CANSimple::set_input_torque_callback(Axis& axis, const can_Message_t& msg) {
     float torque = can_getSignal<float>(msg, 0, 32, true);
-    float vel_lower = can_getSignal<float>(msg, 32, 32, true);
+    float chassis_speed = can_getSignal<float>(msg, 32, 32, true);
 
     // Debug: record received CAN data for Ozone
     debug_rx_can_id = (float)msg.id;
     debug_rx_torque = torque;
-    debug_rx_vel_lower = vel_lower;
+    debug_rx_vel_lower = chassis_speed;
     memcpy(debug_rx_can_buf, msg.buf, 8);
 
     // All-zero CAN frame → stop motor (idle)
-    if (torque == 0.0f && vel_lower == 0.0f) {
+    if (torque == 0.0f && chassis_speed == 0.0f) {
         axis.requested_state_ = Axis::AXIS_STATE_IDLE;
         return;
     }
 
     // Debug: record active torque command for heartbeat
     debug_hb_torque_cmd = torque;
-    debug_hb_vel_lower = vel_lower;
+    debug_hb_vel_lower = chassis_speed;
 
-    // Update torque and speed limit
+    // Update torque and chassis speed
     axis.controller_.input_torque_ = torque;
-    axis.controller_.config_.dribbler_vel_limit_lower = vel_lower;
+    axis.controller_.chassis_speed_ = chassis_speed;
 
     // Auto-request closed-loop control when idle
     if (axis.requested_state_ == Axis::AXIS_STATE_UNDEFINED
