@@ -8,6 +8,7 @@
 uint32_t pos_abs_debug = 0;
 float pos_estimate_debug = 0;
 float vel_estimate_debug = 0;
+float vel_estimate_raw_debug = 0;
 float pose_cirular_debug = 0;
 uint16_t raw_val_debug = 0;
 float spi_error_rate_debug = 0.0f;
@@ -518,18 +519,33 @@ bool Encoder::update() {
     pos_estimate_ = pos_estimate_counts_ / (float)config_.cpr;
     vel_estimate_ = vel_estimate_counts_ / (float)config_.cpr;
 
-    // Low-pass filter velocity estimate to reduce noise in control loop
-    // First-order IIR filter: y[n] = y[n-1] + alpha * (x[n] - y[n-1])
-    float vel_filter_alpha = std::min(current_meas_period * config_.vel_filter_bandwidth * 2.0f * M_PI, 1.0f);
-    float vel_filtered = vel_estimate_filtered_.any().value_or(0.0f);
-    vel_filtered += vel_filter_alpha * (vel_estimate_.any().value_or(0.0f) - vel_filtered);
-    vel_estimate_filtered_ = vel_filtered;
+    // Clamp extreme outliers (>500 turn/s) before feeding into median filter
+    float vel_raw = vel_estimate_.any().value_or(0.0f);
+    float vel_pre_clamp = vel_raw; // Save raw value for debug
+    if (vel_raw > 500.0f) vel_raw = 500.0f;
+    else if (vel_raw < -500.0f) vel_raw = -500.0f;
+
+    // Median filter (window=5) on velocity estimate for outlier rejection
+    vel_median_buffer_[vel_median_index_] = vel_raw;
+    vel_median_index_ = (vel_median_index_ + 1) % 5;
+    float v[5] = {vel_median_buffer_[0], vel_median_buffer_[1], vel_median_buffer_[2],
+                  vel_median_buffer_[3], vel_median_buffer_[4]};
+    if (v[0] > v[1]) { float t = v[0]; v[0] = v[1]; v[1] = t; }
+    if (v[3] > v[4]) { float t = v[3]; v[3] = v[4]; v[4] = t; }
+    if (v[0] > v[3]) { float t = v[0]; v[0] = v[3]; v[3] = t; }
+    if (v[1] > v[4]) { float t = v[1]; v[1] = v[4]; v[4] = t; }
+    if (v[1] > v[2]) { float t = v[1]; v[1] = v[2]; v[2] = t; }
+    if (v[2] > v[3]) { float t = v[2]; v[2] = v[3]; v[3] = t; }
+    if (v[0] > v[1]) { float t = v[0]; v[0] = v[1]; v[1] = t; }
+    if (v[3] > v[4]) { float t = v[3]; v[3] = v[4]; v[4] = t; }
+    vel_estimate_ = v[2];
 
     // debug variables
     if (axis_->axis_num_ == 5) {
         pos_abs_debug = pos_abs_;
         pos_estimate_debug = pos_estimate_counts_ / (float)config_.cpr;
-        vel_estimate_debug = vel_filtered; // Use filtered velocity for debug
+        vel_estimate_debug = vel_estimate_.any().value_or(0.0f); // Median-filtered velocity
+        vel_estimate_raw_debug = vel_pre_clamp; // Raw velocity before clamp+median
     }
     
     // TODO: we should strictly require that this value is from the previous iteration

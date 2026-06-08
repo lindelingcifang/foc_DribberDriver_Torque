@@ -145,22 +145,36 @@ static float limitVel(const float vel_limit, const float vel_estimate, const flo
 }
 
 // Asymmetric velocity limit for dribbler.
-// v_min = -50 (hardcoded upper bound), v_max = vel_lower from CAN (e.g. -20).
-// When velocity is in range [v_min, v_max], torque passes through unchanged.
-// When velocity is outside the range:
-//   - Too slow (vel > v_max): add a constant 0.02 Nm boost to accelerate.
-//   - Too fast (vel < v_min): P control clamps torque to force deceleration.
 static float limitVelAsymmetric(const float v_min, const float v_max,
                                  const float vel_estimate, const float vel_gain,
                                  const float torque) {
     if (vel_estimate > v_max) {
-        // Too slow: boost torque by 0.02 Nm to accelerate
-        return torque;
-    } else if (vel_estimate < v_min) {
-        // Too fast: P control to force deceleration
-        float T_min = (v_min - vel_estimate) * vel_gain;
-        if (torque < T_min) return T_min;
+        // 提示：你的注释写了 "add a constant 0.02 Nm boost"，但原来的代码并未实现。
+        // 如果你需要这个 boost，应该改为 return torque - 0.02f; (假设负向驱动)
+        // 这里暂时保持你原来的 return torque 逻辑不变。
+        return torque; 
+    } 
+    else if (vel_estimate < v_min) {
+        // 1. 计算超速差值（当速度比 v_min 更小/更负时，overspeed 为正数）
+        float overspeed = v_min - vel_estimate; 
+        
+        // 2. 生成正向的刹车/阻尼力矩
+        float counter_torque = overspeed * vel_gain; 
+        
+        // 3. 核心修正：在原有给定力矩的基础上进行加减，实现无缝平滑过渡
+        float modified_torque = torque + counter_torque;
+        
+        // 4. (可选但推荐) 防反转钳位
+        // 对于 Dribbler（吸球滚轮），通常只需要削弱驱动力使其减速，
+        // 而不希望产生强烈的反向刹车力（可能导致球被弹飞或反转）。
+        // 如果不希望主动刹车，取消下方注释：
+        // if (modified_torque > 0.0f) {
+        //     return 0.0f; 
+        // }
+        
+        return modified_torque;
     }
+    
     return torque;
 }
 

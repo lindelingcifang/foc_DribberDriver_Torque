@@ -19,8 +19,7 @@ public:
         float calib_range = 0.025f; // Accuracy required to pass encoder cpr check
         float calib_scan_distance = 16.0f * M_PI; // rad electrical
         float calib_scan_omega = 4.0f * M_PI; // rad/s electrical
-        float bandwidth = 2000.0f;  // PLL bandwidth [Hz], reduced from 1000 for noise reduction
-        float vel_filter_bandwidth = 500.0f; // Additional velocity low-pass filter bandwidth [Hz]
+        float bandwidth = 1500.0f;  // PLL bandwidth [Hz], reduced from 1000 for noise reduction
         int32_t phase_offset = 27;        // Offset between encoder count and rotor electrical phase
         float phase_offset_float = 0.501499832f; // Sub-count phase alignment offset
         int32_t cpr = 6 * 8; // Counts per revolution
@@ -82,8 +81,10 @@ public:
 
     OutputPort<float> pos_estimate_ = 0.0f; // [turn]
     OutputPort<float> vel_estimate_ = 0.0f; // [turn/s] raw PLL output
-    OutputPort<float> vel_estimate_filtered_ = 0.0f; // [turn/s] low-pass filtered velocity
     OutputPort<float> pos_circular_ = 0.0f; // [turn]
+
+    float vel_median_buffer_[5] = {0.0f};
+    uint8_t vel_median_index_ = 0;
 
     bool pos_estimate_valid_ = false;
     bool vel_estimate_valid_ = false;
