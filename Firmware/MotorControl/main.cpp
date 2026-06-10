@@ -65,7 +65,7 @@ static void config_clear_all() {
         axes[i].clear_config();
     }
     // Axis 0 (dribbler): torque control with asymmetric velocity limit [-50, vel_lower from CAN]
-    axes[0].controller_.config_.control_mode = Controller::CONTROL_MODE_TORQUE_CONTROL;
+    axes[0].controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
     axes[0].controller_.config_.input_mode = Controller::INPUT_MODE_PASSTHROUGH;
     axes[0].controller_.config_.torque_limit_min = -0.25f;
     axes[0].controller_.config_.torque_limit_max = 0.25f;

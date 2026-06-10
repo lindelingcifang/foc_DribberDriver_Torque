@@ -51,6 +51,8 @@ extern Encoder encoders[AXIS_COUNT];
 struct GpioFunction { int mode = 0; uint8_t alternate_function = 0xff; };
 extern std::array<GpioFunction, 3> alternate_functions[GPIO_COUNT];
 
+void infra_pwm_init();
+
 #endif
 
 // Period in [s]

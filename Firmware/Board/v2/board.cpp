@@ -112,6 +112,8 @@ bool board_init() {
     MX_TIM1_Init();
     MX_TIM2_Init();
     MX_TIM16_Init();
+    MX_TIM15_Init();
+    infra_pwm_init();
     MX_SPI1_Init();
     
     HAL_NVIC_SetPriority(ControlLoop_IRQn, 5, 0);
@@ -169,6 +171,17 @@ void infra_sense_adc_cb(uint32_t adc_value) {
     infra_adc_raw = (uint16_t)(adc_value & 0xFFFU);
 }
 
+void infra_pwm_init() {
+    // CubeMX 已完成: RCC 时钟、GPIO 输出、TIM15 时基+CC1E、NVIC 优先级 15
+    // 这里补上: CCR1 预加载、UEV+CC1 中断使能、启动
+    TIM15->CCMR1 |= TIM_CCMR1_OC1PE;
+    TIM15->CCR1 = 0;
+    TIM15->EGR = TIM_EGR_UG;
+    TIM15->DIER |= TIM_DIER_UIE | TIM_DIER_CC1IE;
+    __HAL_TIM_CLEAR_FLAG(&htim15, TIM_FLAG_UPDATE | TIM_FLAG_CC1);
+    __HAL_TIM_ENABLE(&htim15);
+}
+
 static bool fetch_and_reset_adcs(
         std::optional<Iph_ABC_t>* current0,
         std::optional<Iph_ABC_t>* current1) {
@@ -181,6 +194,10 @@ static bool fetch_and_reset_adcs(
 
     vbus_sense_adc_cb(ADC1->JDR1);
     infra_sense_adc_cb(ADC1->DR);
+
+    // 更新红外 LED PWM 占空比 (CCR1 预加载，整周期无毛刺)
+    uint32_t duty = ((uint32_t)infra_adc_raw * 4085u) / 4095u;
+    TIM15->CCR1 = (duty >= 4085u) ? 4086u : duty;
 
     std::optional<float> phA = motors[0].phase_current_from_adcval(ADC2->JDR1);
     std::optional<float> phB = motors[0].phase_current_from_adcval(ADC3->JDR1);
@@ -320,6 +337,13 @@ void ControlLoop_IRQHandler(void) {
 
     zfoc.task_timers_armed_ = zfoc.task_timers_armed_ && !TaskTimer::enabled;
     TaskTimer::enabled = false;
+}
+
+// 覆写 HAL 弱回调：TIM15 CC1 关闭 PC14 红外 LED
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim == &htim15) {
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET); // LED OFF
+    }
 }
 
 } // extern "C"
