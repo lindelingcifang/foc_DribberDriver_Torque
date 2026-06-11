@@ -253,12 +253,26 @@ void CANSimple::set_input_pos_callback(Axis& axis, const can_Message_t& msg) {
 }
 
 void CANSimple::set_input_vel_callback(Axis& axis, const can_Message_t& msg) {
-    axis.controller_.input_vel_ = can_getSignal<float>(msg, 0, 32, true);
+    float input_vel = can_getSignal<float>(msg, 0, 32, true);
     float torque_limit_mag = can_getSignal<float>(msg, 32, 32, true);
+
+    // All-zero CAN frame → stop motor (idle)
+    if (input_vel == 0.0f && torque_limit_mag == 0.0f) {
+        axis.requested_state_ = Axis::AXIS_STATE_IDLE;
+        return;
+    }
+
+    axis.controller_.input_vel_ = input_vel;
     axis.controller_.input_torque_ = 0.0f;
     if (torque_limit_mag > 0.0f) {
         axis.controller_.config_.torque_limit_max = torque_limit_mag;
         axis.controller_.config_.torque_limit_min = -torque_limit_mag;
+    }
+
+    // Auto-request closed-loop control when idle
+    if (axis.requested_state_ == Axis::AXIS_STATE_UNDEFINED
+        && axis.current_state_ == Axis::AXIS_STATE_IDLE) {
+        axis.requested_state_ = Axis::AXIS_STATE_CLOSED_LOOP_CONTROL;
     }
 }
 
@@ -282,7 +296,7 @@ void CANSimple::set_input_torque_callback(Axis& axis, const can_Message_t& msg) 
     debug_hb_torque_cmd = torque;
     debug_hb_vel_lower = chassis_speed;
 
-    // Update torque and chassis speed
+    // Update torque and chassis speed (negative = backward, m/s)
     axis.controller_.input_torque_ = torque;
     axis.controller_.chassis_speed_ = chassis_speed;
 

@@ -145,54 +145,61 @@ static float limitVel(const float vel_limit, const float vel_estimate, const flo
 }
 
 // Asymmetric velocity limit for dribbler.
+// Overspeed branch only: when vel < v_min, add counter-torque (bump-less).
+// No action on slow speed (vel > v_max is handled by the torque command itself).
 static float limitVelAsymmetric(const float v_min, const float v_max,
                                  const float vel_estimate, const float vel_gain,
                                  const float torque) {
-    if (vel_estimate > v_max) {
-        // 提示：你的注释写了 "add a constant 0.02 Nm boost"，但原来的代码并未实现。
-        // 如果你需要这个 boost，应该改为 return torque - 0.02f; (假设负向驱动)
-        // 这里暂时保持你原来的 return torque 逻辑不变。
-        return torque; 
-    } 
-    else if (vel_estimate < v_min) {
-        // 1. 计算超速差值（当速度比 v_min 更小/更负时，overspeed 为正数）
-        float overspeed = v_min - vel_estimate; 
-        
-        // 2. 生成正向的刹车/阻尼力矩
-        float counter_torque = overspeed * vel_gain; 
-        
-        // 3. 核心修正：在原有给定力矩的基础上进行加减，实现无缝平滑过渡
+    if (vel_estimate < v_min) {
+        float overspeed = v_min - vel_estimate;
+        float counter_torque = overspeed * vel_gain;
         float modified_torque = torque + counter_torque;
-        
-        // 4. (可选但推荐) 防反转钳位
-        // 对于 Dribbler（吸球滚轮），通常只需要削弱驱动力使其减速，
-        // 而不希望产生强烈的反向刹车力（可能导致球被弹飞或反转）。
-        // 如果不希望主动刹车，取消下方注释：
+
+        // Anti-spit clamp: never output positive torque (would brake/reverse the dribbler)
         // if (modified_torque > 0.0f) {
-        //     return 0.0f; 
+        //     return 0.0f;
         // }
-        
         return modified_torque;
     }
-    
     return torque;
 }
 
 float Controller::calculateDynamicVMin(float v_chassis_x) {
     constexpr float BASE_V_MIN = -50.0f;
-    constexpr float PER_MS_COMPENSATE = 23.0f;   // turn/s per m/s
-    constexpr float SLIP_MARGIN = 1.2f;
-    constexpr float SAFETY_CLAMP = -100.0f;      // turn/s
+    constexpr float PER_MS_COMPENSATE = 1.0f / 0.04335f; // ~23.07 turn/s per m/s
+    constexpr float SLIP_MARGIN = 1.3f;
+    constexpr float DEAD_ZONE = 0;       // m/s, backward=negative
+    constexpr float FILTER_ALPHA = 0.02f;
+    constexpr float SAFETY_CLAMP = -200.0f;   // turn/s
+
+    // LP filter chassis speed (1st order IIR)
+    chassis_speed_filtered_ += FILTER_ALPHA * (v_chassis_x - chassis_speed_filtered_);
 
     float dynamic_v_min = BASE_V_MIN;
-    if (v_chassis_x < 0.0f) {
-        float compensate_turns = -v_chassis_x * PER_MS_COMPENSATE * SLIP_MARGIN;
+    if (chassis_speed_filtered_ < DEAD_ZONE) {
+        float compensate_turns = -chassis_speed_filtered_ * PER_MS_COMPENSATE * SLIP_MARGIN;
         dynamic_v_min -= compensate_turns;
     }
     if (dynamic_v_min < SAFETY_CLAMP) {
         dynamic_v_min = SAFETY_CLAMP;
     }
     return dynamic_v_min;
+}
+
+float Controller::applyTorqueSlewRate(float target, float dt) {
+    constexpr float SLEW_RELEASE = 50.0f;  // [Nm/s] fast release toward 0
+    constexpr float SLEW_APPLY  = 5.0f;    // [Nm/s] slow apply toward negative
+
+    float step = target - torque_slew_current_;
+    if (step > 0.0f) {
+        // releasing (toward 0): fast
+        step = std::min(step, SLEW_RELEASE * dt);
+    } else {
+        // applying (more negative): slow
+        step = std::max(step, -SLEW_APPLY * dt);
+    }
+    torque_slew_current_ += step;
+    return torque_slew_current_;
 }
 
 bool Controller::update() {
@@ -510,6 +517,9 @@ bool Controller::update() {
         set_error(ERROR_SPINOUT_DETECTED);
         return false;
     }
+
+    // Slew rate limiting: fast release, slow apply (anti-oscillation)
+    torque = applyTorqueSlewRate(torque, current_meas_period);
 
     torque_output_ = torque;
     if (axis_->axis_num_ == 5) {

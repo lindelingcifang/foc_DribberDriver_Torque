@@ -18,7 +18,7 @@ public:
     struct Config_t {
         bool pre_calibrated = false; // can be set to true to indicate that all values here are valid
         int32_t pole_pairs = 1;
-        float calibration_current = 0.5f;    // [A]
+        float calibration_current = 1.5f;    // [A]
         float resistance_calib_max_voltage = 1.0f; // [V] - You may need to increase this if this voltage isn't sufficient to drive calibration_current through the motor.
         float phase_inductance = 0.0000392f;        // to be set by measure_phase_inductance
         float phase_resistance = 0.37f;        // to be set by measure_phase_resistance

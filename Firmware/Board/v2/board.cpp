@@ -195,9 +195,41 @@ static bool fetch_and_reset_adcs(
     vbus_sense_adc_cb(ADC1->JDR1);
     infra_sense_adc_cb(ADC1->DR);
 
-    // 更新红外 LED PWM 占空比 (CCR1 预加载，整周期无毛刺)
-    uint32_t duty = ((uint32_t)infra_adc_raw * 4085u) / 4095u;
-    TIM15->CCR1 = (duty >= 4085u) ? 4086u : duty;
+    // 红外 LED 阈值控制：无球灯灭，有球随电压增大越来越亮
+    // 1V = 1241 ADC (3.3V ref, 12-bit)，迟滞 50 LSB 防抖
+    static bool infra_pwm_active = false;
+    static const uint16_t INFRA_THRESHOLD_ON  = 1241;   // ~1.0V
+    static const uint16_t INFRA_THRESHOLD_OFF = 1191;   // ~0.96V
+    static const uint16_t INFRA_MAX_ADC = 4095;
+    static const uint16_t INFRA_MAX_DUTY = 4085;
+
+    // 迟滞状态机
+    bool prev_active = infra_pwm_active;
+    if (!infra_pwm_active && infra_adc_raw >= INFRA_THRESHOLD_ON) {
+        infra_pwm_active = true;
+    } else if (infra_pwm_active && infra_adc_raw <= INFRA_THRESHOLD_OFF) {
+        infra_pwm_active = false;
+    }
+
+    // 只在状态切换时动 TIM15 配置，避免每轮清除更新标志导致丢失 PWM 周期
+    if (infra_pwm_active && !prev_active) {
+        // off→on：恢复更新中断，清除可能挂起的旧标志（一次性）
+        __HAL_TIM_CLEAR_FLAG(&htim15, TIM_FLAG_UPDATE);
+        TIM15->DIER |= TIM_DIER_UIE;
+    } else if (!infra_pwm_active && prev_active) {
+        // on→off：禁止更新中断，强制拉低
+        TIM15->DIER &= ~TIM_DIER_UIE;
+    }
+
+    if (infra_pwm_active) {
+        // CCR1 有预加载，写入安全，下个更新事件生效
+        uint32_t duty = ((uint32_t)(infra_adc_raw - INFRA_THRESHOLD_ON) * INFRA_MAX_DUTY)
+                      / (INFRA_MAX_ADC - INFRA_THRESHOLD_ON);
+        TIM15->CCR1 = (duty >= INFRA_MAX_DUTY) ? 4086u : (uint16_t)duty;
+    } else {
+        // 无球：引脚强制拉低，确保彻底灭
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+    }
 
     std::optional<float> phA = motors[0].phase_current_from_adcval(ADC2->JDR1);
     std::optional<float> phB = motors[0].phase_current_from_adcval(ADC3->JDR1);
