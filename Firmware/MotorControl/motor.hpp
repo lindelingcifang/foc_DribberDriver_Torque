@@ -111,6 +111,7 @@ public:
     float effective_current_lim_ = 10.0f; // [A]
     float max_allowed_current_ = 0.0f; // [A] set in setup()
     float max_dc_calib_ = 0.0f; // [A] set in setup()
+    uint8_t current_limit_violation_count_ = 0;
 
     InputPort<float> torque_setpoint_src_; // Usually points to the Controller object's output
     InputPort<float> phase_vel_src_; // Usually points to the Encoder object's output

@@ -1,6 +1,6 @@
 
 
-Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/motor.cpp:455:31, State=BP_STATE_DISABLED
+Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/motor.cpp:459:31, State=BP_STATE_DISABLED
 Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/foc.cpp:80:5, State=BP_STATE_DISABLED
 Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp:54, State=BP_STATE_DISABLED
 Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/Drivers/STM32/stm32_spi_arbiter.cpp:114:37, State=BP_STATE_DISABLED
@@ -8,36 +8,42 @@ Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmwa
 Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/axis.cpp:208:5, State=BP_STATE_DISABLED
 Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/axis.cpp:417, State=BP_STATE_DISABLED
 Breakpoint=E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/Board/v2/board.cpp:258:54, State=BP_STATE_DISABLED
-GraphedExpression="debug_torque", Color=#e56a6f, Show=0
+GraphedExpression="debug_torque", Color=#e56a6f
 GraphedExpression="alpha_debug", Color=#35792b, Show=0
 GraphedExpression="beta_debug", Color=#769dda, Show=0
 GraphedExpression="debug_IA", Color=#b14f0d, Show=0
 GraphedExpression="debug_IB", Color=#b3c38e, Show=0
 GraphedExpression="pos_estimate_debug", Color=#ab7b05, Show=0
-GraphedExpression="vel_estimate_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#7fd3b7
-GraphedExpression="closed_torque_debug", Color=#50328f
+GraphedExpression="vel_estimate_debug", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#7fd3b7, Show=0
+GraphedExpression="closed_torque_debug", Color=#50328f, Show=0
+GraphedExpression="debug_IC", Color=#c587a5, Show=0
+GraphedExpression="debug_Inorm_sq", Color=#999401
+OpenDocument="stm32g4xx_hal_timebase_tim.c", FilePath="E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/Board/v2/Core/Src/stm32g4xx_hal_timebase_tim.c", Line=81
+OpenDocument="motor.cpp", FilePath="E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/motor.cpp", Line=0
+OpenDocument="board.cpp", FilePath="E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/Board/v2/board.cpp", Line=54
+OpenDocument="tasks.c", FilePath="E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/ThirdParty/FreeRTOS/Source/tasks.c", Line=3793
 OpenDocument="startup_stm32g474xx.s", FilePath="E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/Board/v2/startup_stm32g474xx.s", Line=52
 OpenDocument="main.cpp", FilePath="E:/zjunlict/DribberDriver_Torque/foc_DribberDriver_Torque/zfoc/Firmware/MotorControl/main.cpp", Line=416
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=485, h=300, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=485, h=302, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Source Files", DockArea=BOTTOM, x=3, y=0, w=297, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=485, h=337, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=788, h=545, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=788, h=428, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=616, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=2, y=0, w=1500, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="100 ms / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="193;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="491;-91", CodeGraphLegendShown=0, CodeGraphLegendPosition="514;0"
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=485, h=336, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=788, h=542, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=788, h=431, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=901, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=2, y=0, w=1215, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="193;-4", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1215;-91", CodeGraphLegendShown=0, CodeGraphLegendPosition="1238;0"
 OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=144, h=498, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=485, h=335, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
+OpenWindow="FreeRTOS", DockArea=RIGHT, x=0, y=2, w=485, h=334, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, Showing="Task List"
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
-TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;129;817]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;129;459]
 TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[362;196;364;140;182;134]
 TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[442;126;100;100;1499]
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" debug_torque";" alpha_debug";" beta_debug";" debug_IA";" debug_IB";" pos_estimate_debug";" vel_estimate_debug";" closed_torque_debug"], ColWidths=[100;100;100;100;100;100;100;100;100;100]
-TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[173;100;105;196;209;127;149;171;171]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" debug_torque";" alpha_debug";" beta_debug";" debug_IA";" debug_IB";" pos_estimate_debug";" vel_estimate_debug";" closed_torque_debug";" debug_IC";" debug_Inorm_sq"], ColWidths=[100;100;100;100;100;100;100;100;100;100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[173;100;196;196;196;196;149;171;171]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Task List", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Name";"Run Count";"Priority";"Status";"Timeout";"Stack Info";"ID";"Mutex Count";"Notified Value";"Notify State"], ColWidths=[194;53;110;110;36;36;151;110;110;110]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[369;624;192;101;100]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[369;624;192;101;105]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[284;230;133;73]
 WatchedExpression="counting_down", Window=Watched Data 1

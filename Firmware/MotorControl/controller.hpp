@@ -25,7 +25,7 @@ public:
         ControlMode control_mode = CONTROL_MODE_VELOCITY_CONTROL;  //see: ControlMode_t
         InputMode input_mode = INPUT_MODE_PASSTHROUGH;             //see: InputMode_t
         float pos_gain = 5.0f;                  // [(turn/s) / turn]
-        float vel_gain = 1.0f / 500.0f;            // [Nm/(turn/s)]
+        float vel_gain = 1.0f / 300.0f;            // [Nm/(turn/s)]
         // float vel_gain = 0.2f / 200.0f,       // [Nm/(rad/s)] <sensorless example>
         float vel_integrator_gain = 1.0f / 20.0f; // [Nm/(turn/s * s)]
         float vel_limit = 500.0f;                  // [turn/s] Infinity to disable.

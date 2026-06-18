@@ -13,9 +13,11 @@ volatile float debug_PWM_A = 0;
 volatile float debug_PWM_B = 0;
 volatile float debug_PWM_C = 0;
 float debug_torque = 0.0f;
+float debug_Inorm_sq = 0.0f;
 
 static constexpr auto CURRENT_ADC_LOWER_BOUND =        (uint32_t)((float)(1 << 12) * CURRENT_SENSE_MIN_VOLT / 3.3f);
 static constexpr auto CURRENT_ADC_UPPER_BOUND =        (uint32_t)((float)(1 << 12) * CURRENT_SENSE_MAX_VOLT / 3.3f);
+static constexpr uint8_t CURRENT_LIMIT_VIOLATION_TRIP_COUNT = 3;
 
 /**
  * @brief This control law adjusts the output voltage such that a predefined
@@ -197,6 +199,7 @@ bool Motor::arm(PhaseControlLaw<3>* control_law) {
 
         // Reset controller states, integrators, setpoints, etc.
         axis_->controller_.reset();
+        current_limit_violation_count_ = 0;
         if (control_law_) {
             control_law_->reset();
         }
@@ -266,6 +269,7 @@ bool Motor::disarm(bool* p_was_armed) {
         was_armed = is_armed_;
         is_armed_ = false;
         armed_state_ = 0;
+        current_limit_violation_count_ = 0;
         TIM_HandleTypeDef* timer = timer_;
         timer->Instance->BDTR &= ~TIM_BDTR_AOE; // prevent the PWMs from automatically enabling at the next update
         __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(timer);
@@ -562,6 +566,11 @@ void Motor::current_meas_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current
             debug_IB = 2;
             debug_IC = 2;
         }
+        if (debug_IA > 20.0f || debug_IB > 20.0f || debug_IC > 20.0f) {
+            debug_IA = 20.0f;
+            debug_IB = 20.0f;
+            debug_IC = 20.0f;
+        }
     }
 
     n_evt_current_measurement_++;
@@ -598,17 +607,26 @@ void Motor::current_meas_cb(uint32_t timestamp, std::optional<Iph_ABC_t> current
         float Inorm_sq = 2.0f / 3.0f * (SQ(current_meas_->phA)
                                       + SQ(current_meas_->phB)
                                       + SQ(current_meas_->phC));
+        // Debug
+        debug_Inorm_sq = Inorm_sq;
 
         // Hack: we disable the current check during motor calibration because
         // it tends to briefly overshoot when the motor moves to align flux with I_alpha
         if (Inorm_sq > SQ(Itrip)) {
-            disarm_with_error(ERROR_CURRENT_LIMIT_VIOLATION);
+            if (++current_limit_violation_count_ >= CURRENT_LIMIT_VIOLATION_TRIP_COUNT) {
+                disarm_with_error(ERROR_CURRENT_LIMIT_VIOLATION);
+            }
+        } else {
+            current_limit_violation_count_ = 0;
         }
-    } else if (is_armed_) {
-        // Since we can't check current limits, be safe for now and disarm.
-        // Theoretically we could continue to operate if there is no active
-        // current limit.
-        disarm_with_error(ERROR_UNKNOWN_CURRENT_MEASUREMENT);
+    } else {
+        current_limit_violation_count_ = 0;
+        if (is_armed_) {
+            // Since we can't check current limits, be safe for now and disarm.
+            // Theoretically we could continue to operate if there is no active
+            // current limit.
+            disarm_with_error(ERROR_UNKNOWN_CURRENT_MEASUREMENT);
+        }
     }
 
     if (control_law_) {
