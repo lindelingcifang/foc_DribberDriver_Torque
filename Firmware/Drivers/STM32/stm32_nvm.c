@@ -32,6 +32,7 @@
 
 #include "stm32_nvm.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #if defined(STM32F405xx)
@@ -67,9 +68,9 @@
 #include <stm32g474xx.h>
 #include <stm32g4xx_hal.h>
 
-// STM32G474 has 2KB pages. Flash is divided into 2 banks in dual-bank mode.
-// We use pages 112-119 (16KB) and pages 120-127 (16KB) in Bank 2.
-// Assuming Bank 2 starts at 0x08040000.
+// STM32G474 has 2KB pages. The same absolute address maps to different HAL
+// Page/Banks values depending on the DBANK option byte, so erase() calculates
+// them at runtime.
 #define FLASH_SECTOR_A 112
 #define FLASH_SECTOR_A_BASE (const volatile uint8_t*)0x08078000UL
 #define FLASH_SECTOR_A_SIZE 0x4000UL
@@ -189,14 +190,70 @@ static void HAL_FLASH_ClearError() {
     __HAL_FLASH_CLEAR_FLAG(FLASH_ERR_FLAGS);
 }
 
+#if defined(STM32G474xx)
+static bool flash_is_dual_bank(void) {
+#if defined(FLASH_OPTR_DBANK)
+    return (READ_BIT(FLASH->OPTR, FLASH_OPTR_DBANK) != 0U);
+#else
+    return false;
+#endif
+}
+
+static uint32_t flash_bank_from_addr(uint32_t addr) {
+    if (flash_is_dual_bank() && (addr >= (FLASH_BASE + FLASH_BANK_SIZE))) {
+        return FLASH_BANK_2;
+    }
+    return FLASH_BANK_1;
+}
+
+static uint32_t flash_page_size(void) {
+#if defined(FLASH_PAGE_SIZE_128_BITS)
+    return flash_is_dual_bank() ? FLASH_PAGE_SIZE : FLASH_PAGE_SIZE_128_BITS;
+#else
+    return FLASH_PAGE_SIZE;
+#endif
+}
+
+static uint32_t flash_page_from_addr(uint32_t addr) {
+    uint32_t bank_base = FLASH_BASE;
+    if (flash_is_dual_bank() && (addr >= (FLASH_BASE + FLASH_BANK_SIZE))) {
+        bank_base += FLASH_BANK_SIZE;
+    }
+    return (addr - bank_base) / flash_page_size();
+}
+
+static bool flash_range_is_valid(uint32_t addr, uint32_t size) {
+    const uint32_t page_size = flash_page_size();
+    if ((size == 0U) || ((size % page_size) != 0U)) {
+        return false;
+    }
+    if ((addr < FLASH_BASE) || ((addr + size) > (FLASH_BASE + FLASH_SIZE))) {
+        return false;
+    }
+    if (((addr - FLASH_BASE) % page_size) != 0U) {
+        return false;
+    }
+    if (flash_is_dual_bank() && (flash_bank_from_addr(addr) != flash_bank_from_addr(addr + size - 1U))) {
+        return false;
+    }
+    return true;
+}
+#endif
+
 
 #if defined(STM32G474xx)
 int erase(sector_t *sector) {
+    const uint32_t sector_addr = (uint32_t)sector->alloc_table;
+    const uint32_t sector_size = (uint32_t)(sector->n_data * sizeof(uint64_t));
+    if (!flash_range_is_valid(sector_addr, sector_size)) {
+        return -1;
+    }
+
     FLASH_EraseInitTypeDef erase_struct = {
         .TypeErase = FLASH_TYPEERASE_PAGES,
-        .Banks = FLASH_BANK_2,
-        .Page = sector->sector_id,
-        .NbPages = 8
+        .Banks = flash_bank_from_addr(sector_addr),
+        .Page = flash_page_from_addr(sector_addr),
+        .NbPages = sector_size / flash_page_size()
     };
     HAL_FLASH_Unlock();
     HAL_FLASH_ClearError();

@@ -195,6 +195,10 @@ Motor::Motor(TIM_HandleTypeDef* timer,
 bool Motor::arm(PhaseControlLaw<3>* control_law) {
 
     CRITICAL_SECTION() {
+        if (zfoc.config_save_in_progress_) {
+            return false;
+        }
+
         control_law_ = control_law;
 
         // Reset controller states, integrators, setpoints, etc.

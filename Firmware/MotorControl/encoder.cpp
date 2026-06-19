@@ -33,8 +33,12 @@ Encoder::Encoder(Stm32SpiArbiter* spi_arbiter, Stm32Gpio abs_spi_cs_gpio, Mode m
 
 bool Encoder::apply_config(ZfocIntf::MotorIntf::MotorType motor_type) {
     config_.parent = this;
+    config_.mode = mode_;
 
     switch(mode_) {
+        case MODE_DISABLED:
+            is_ready_ = false;
+            return true;
         case MODE_SPI_ABS_MT6701:
             config_.cpr = (1 << 13);
             break;
@@ -313,6 +317,8 @@ bool Encoder::run_offset_calibration() {
 
 void Encoder::sample_now() {
     switch (mode_) {
+        case MODE_DISABLED:
+            break;
         case MODE_SPI_ABS_MT6701:
         case MODE_SPI_ABS_AS5047P: {
             abs_spi_start_transaction();
@@ -438,6 +444,8 @@ bool Encoder::update() {
     int32_t pos_abs_latched = pos_abs_; //LATCH
 
     switch (mode_) {
+        case MODE_DISABLED:
+            return true;
         case MODE_SPI_ABS_MT6701:
         case MODE_SPI_ABS_AS5047P: {
             if (abs_spi_pos_updated_ == false) {

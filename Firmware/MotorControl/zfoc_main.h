@@ -136,6 +136,7 @@ public:
     void clear_errors();
 
     bool any_error();
+    void update_calibration_save_state();
 
     void do_fast_checks();
     void sampling_cb();
@@ -176,6 +177,9 @@ public:
 
     BoardConfig_t config_;
     uint32_t user_config_loaded_ = 0;
+    bool config_loaded_from_nvm_ = false;
+    bool calibration_save_pending_ = false;
+    bool config_save_in_progress_ = false;
     bool misconfigured_ = false;
 
     uint32_t test_property_ = 0;

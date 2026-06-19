@@ -203,6 +203,13 @@ float Controller::applyTorqueSlewRate(float target, float dt) {
 }
 
 bool Controller::update() {
+    if (axis_->encoder_.config_.mode == Encoder::MODE_DISABLED
+        && !axis_->config_.enable_sensorless_mode) {
+        torque_output_ = 0.0f;
+        error_ &= ~ERROR_INVALID_ESTIMATE;
+        return true;
+    }
+
     std::optional<float> pos_estimate_linear = pos_estimate_linear_src_.present();
     std::optional<float> pos_estimate_circular = pos_estimate_circular_src_.present();
     std::optional<float> pos_wrap = pos_wrap_src_.present();
