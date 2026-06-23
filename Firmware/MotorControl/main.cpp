@@ -174,9 +174,17 @@ static bool config_apply_all() {
     return success;
 }
 
+static void reset_with_irqs_disabled() {
+    __disable_irq();
+    __DSB();
+    NVIC_SystemReset();
+    for (;;);
+}
+
 bool Zfoc::save_configuration(void) {
     bool success = false;
     bool blocked_by_runtime_state = false;
+    bool nvm_store_attempted = false;
     config_save_in_progress_ = true;
 
     for (auto& axis : axes) {
@@ -191,10 +199,20 @@ bool Zfoc::save_configuration(void) {
         } else {
             size_t config_size = 0;
             success = config_manager.prepare_store()
-                   && config_write_all()
-                   && config_manager.start_store(&config_size)
-                   && config_write_all()
-                   && config_manager.finish_store();
+                   && config_write_all();
+            if (success) {
+                nvm_store_attempted = true;
+                success = config_manager.start_store(&config_size)
+                       && config_write_all()
+                       && config_manager.finish_store();
+            }
+
+            if (success || nvm_store_attempted) {
+                // Flash erase/program can stall code execution and make us miss
+                // time-sensitive PWM/ADC events. Reset before re-enabling IRQs
+                // so stale control-loop interrupts cannot run on desynced state.
+                reset_with_irqs_disabled();
+            }
         }
     }
 
@@ -204,25 +222,21 @@ bool Zfoc::save_configuration(void) {
         error_ |= ERROR_NVM_FLASH_LAYOUT_INVALID;
     }
 
-    if (success) {
-        // Flash erase/program can stall code execution and make us miss time
-        // sensitive events, so saved configurations are only used after reboot.
-        NVIC_SystemReset();
-    }
-
     config_save_in_progress_ = false;
     return success;
 }
 
 void Zfoc::erase_configuration(void) {
-    NVM_erase();
+    CRITICAL_SECTION() {
+        NVM_erase();
 
-    // FIXME: this reboot is a workaround because we don't want the next save_configuration
-    // to write back the old configuration from RAM to NVM. The proper action would
-    // be to reset the values in RAM to default. However right now that's not
-    // practical because several startup actions depend on the config. The
-    // other problem is that the stack overflows if we reset to default here.
-    NVIC_SystemReset();
+        // FIXME: this reboot is a workaround because we don't want the next save_configuration
+        // to write back the old configuration from RAM to NVM. The proper action would
+        // be to reset the values in RAM to default. However right now that's not
+        // practical because several startup actions depend on the config. The
+        // other problem is that the stack overflows if we reset to default here.
+        reset_with_irqs_disabled();
+    }
 }
 
 bool Zfoc::any_error() {

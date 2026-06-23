@@ -23,7 +23,7 @@ public:
         int32_t phase_offset = 27;        // Offset between encoder count and rotor electrical phase
         float phase_offset_float = 0.501499832f; // Sub-count phase alignment offset
         int32_t cpr = 6 * 8; // Counts per revolution
-        bool pre_calibrated = true; // If true, this means the offset stored in
+        bool pre_calibrated = false; // If true, this means the offset stored in
                                     // configuration is valid and does not need
                                     // be determined by run_offset_calibration.
                                     // In this case the encoder will enter ready
