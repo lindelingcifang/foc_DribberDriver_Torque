@@ -16,6 +16,42 @@ float debug_hb_state = 0.0f;
 float debug_hb_flags = 0.0f;
 uint8_t debug_hb_buf[8] = {0};
 
+namespace {
+
+void reset_controller_mode_state(Controller& controller) {
+    controller.vel_setpoint_ = 0.0f;
+    controller.vel_integrator_torque_ = 0.0f;
+    controller.torque_setpoint_ = 0.0f;
+    controller.mechanical_power_ = 0.0f;
+    controller.electrical_power_ = 0.0f;
+    controller.chassis_speed_ = 0.0f;
+    controller.chassis_speed_filtered_ = 0.0f;
+    controller.torque_slew_current_ = 0.0f;
+}
+
+void set_controller_mode_for_can_input(
+        Controller& controller,
+        Controller::ControlMode control_mode,
+        Controller::InputMode input_mode) {
+    if (controller.config_.control_mode == control_mode
+        && controller.config_.input_mode == input_mode) {
+        return;
+    }
+
+    controller.config_.control_mode = control_mode;
+    controller.config_.input_mode = input_mode;
+    controller.control_mode_updated();
+    reset_controller_mode_state(controller);
+}
+
+void clear_controller_can_input(Controller& controller) {
+    controller.input_vel_ = 0.0f;
+    controller.input_torque_ = 0.0f;
+    reset_controller_mode_state(controller);
+}
+
+} // namespace
+
 bool CANSimple::init() {
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
         if (!renew_subscription(i)) {
@@ -258,9 +294,15 @@ void CANSimple::set_input_vel_callback(Axis& axis, const can_Message_t& msg) {
 
     // All-zero CAN frame → stop motor (idle)
     if (input_vel == 0.0f && torque_limit_mag == 0.0f) {
+        clear_controller_can_input(axis.controller_);
         axis.requested_state_ = Axis::AXIS_STATE_IDLE;
         return;
     }
+
+    set_controller_mode_for_can_input(
+        axis.controller_,
+        Controller::CONTROL_MODE_VELOCITY_CONTROL,
+        Controller::INPUT_MODE_PASSTHROUGH);
 
     axis.controller_.input_vel_ = input_vel;
     axis.controller_.input_torque_ = 0.0f;
@@ -288,9 +330,17 @@ void CANSimple::set_input_torque_callback(Axis& axis, const can_Message_t& msg) 
 
     // All-zero CAN frame → stop motor (idle)
     if (torque == 0.0f && chassis_speed == 0.0f) {
+        clear_controller_can_input(axis.controller_);
+        debug_hb_torque_cmd = 0.0f;
+        debug_hb_vel_lower = 0.0f;
         axis.requested_state_ = Axis::AXIS_STATE_IDLE;
         return;
     }
+
+    set_controller_mode_for_can_input(
+        axis.controller_,
+        Controller::CONTROL_MODE_TORQUE_CONTROL,
+        Controller::INPUT_MODE_PASSTHROUGH);
 
     // Debug: record active torque command for heartbeat
     debug_hb_torque_cmd = torque;
@@ -309,9 +359,8 @@ void CANSimple::set_input_torque_callback(Axis& axis, const can_Message_t& msg) 
 
 void CANSimple::set_controller_modes_callback(Axis& axis, const can_Message_t& msg) {
     Controller::ControlMode const mode = static_cast<Controller::ControlMode>(can_getSignal<int32_t>(msg, 0, 32, true));
-    axis.controller_.config_.control_mode = static_cast<Controller::ControlMode>(mode);
-    axis.controller_.config_.input_mode = static_cast<Controller::InputMode>(can_getSignal<int32_t>(msg, 32, 32, true));
-    axis.controller_.control_mode_updated();
+    Controller::InputMode const input_mode = static_cast<Controller::InputMode>(can_getSignal<int32_t>(msg, 32, 32, true));
+    set_controller_mode_for_can_input(axis.controller_, mode, input_mode);
 }
 
 void CANSimple::set_limits_callback(Axis& axis, const can_Message_t& msg) {
